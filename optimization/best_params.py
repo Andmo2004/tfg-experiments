@@ -237,10 +237,11 @@ def run_optuna_search(n_trials: int = 100):
             continue
             
         best = study.best_trial
-        eps_absolute = best.user_attrs.get("eps_absolute", 0.0)
-        clusters = best.user_attrs.get("clusters", 0)
-        noise_pct = best.user_attrs.get("noise_pct", 0.0)
-        
+
+        eps_absolute = float(best.user_attrs.get("eps_absolute", 0.0) or 0.0)
+        clusters = int(best.user_attrs.get("clusters", 0) or 0)
+        noise_pct = float(best.user_attrs.get("noise_pct", 0.0) or 0.0)
+
         print(f"  >> Mejor F1 Score : {best.value:.4f}")
         print(f"  >> Scaler         : {best.params['scaler']}")
         print(f"  >> Distancia      : {best.params['metric']}")
@@ -249,13 +250,15 @@ def run_optuna_search(n_trials: int = 100):
         print(f"  >> Clusters Hall. : {clusters}")
         print(f"  >> Ruido (%)      : {noise_pct}%")
         
+        eps_percentile_val = best.params.get("eps_percentile", 0.0) or 0.0
+        best_value = best.value or 0.0
         results.append({
             "dataset": dataset_name,
-            "best_score": round(best.value, 4),
+            "best_score": round(float(best_value), 4),
             "scaler": best.params["scaler"],
             "metric": best.params["metric"],
             "min_pts": best.params["min_pts"],
-            "eps_percentile": round(best.params["eps_percentile"], 2),
+            "eps_percentile": round(float(eps_percentile_val), 2),
             "eps_absolute": round(eps_absolute, 6),
             "clusters": clusters,
             "noise_pct": noise_pct

@@ -76,7 +76,8 @@ def run_statistical_tests(df, metric_col):
         for m in models:
             if m != best_model:
                 try:
-                    stat_w, p_wilc = wilcoxon(pivot[best_model], pivot[m])
+                    stat_w, p_wilc = wilcoxon(pivot[best_model], pivot[m])  # type: ignore
+                    p_wilc = float(p_wilc)  # type: ignore
                     signif = "*" if p_wilc < 0.05 else " "
                     print(f"  {best_model} vs {m:<15} : p-value = {p_wilc:.5f} {signif}")
                 except Exception as e:

@@ -83,7 +83,8 @@ def run_statistical_tests(df, metric_col, maximize=True):
         for d in distances:
             if d != best_dist:
                 try:
-                    stat_w, p_wilc = wilcoxon(pivot[best_dist], pivot[d])
+                    stat_w, p_wilc = wilcoxon(pivot[best_dist], pivot[d])  # type: ignore
+                    p_wilc = float(p_wilc)  # type: ignore
                     signif = "*" if p_wilc < 0.05 else " "
                     print(f"  {best_dist} vs {d:<15} : p-value = {p_wilc:.5f} {signif}")
                 except Exception as e:

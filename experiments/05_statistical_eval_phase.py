@@ -56,7 +56,9 @@ def run_wilcoxon_test(data1, data2, metric_name, subgroup_name="Todos"):
         return None
 
     try:
-        stat, p_value = wilcoxon(data1, data2, alternative='two-sided')
+        stat, p_value = wilcoxon(data1, data2, alternative='two-sided')  # type: ignore
+        stat = float(stat)  # type: ignore
+        p_value = float(p_value)  # type: ignore
         r = calculate_effect_size(p_value, n)
         significant = "Sí" if p_value < 0.05 else "No"
         interpretation = interpret_effect_size(r)
