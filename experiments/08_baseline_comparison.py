@@ -98,125 +98,128 @@ def main():
             continue
             
         dataset = ArffToMIData.from_arff(path)
-        # Partición: 70% train / 30% test
-        train_data, test_data = dataset.split_data(percentage_train=70, seed=42)
-        
-        scaler = scaler_cls()
-        train_scaled = scaler.fit_transform(train_data)
-        test_scaled = scaler.transform(test_data)
-        
-        y_true_train = np.array([int(float(bag.label)) for bag in train_scaled.bags])
-        y_true_test = np.array([int(float(bag.label)) for bag in test_scaled.bags])
-        
-        # ---------------------------------------------------------
-        # MIDBSCAN
-        # ---------------------------------------------------------
-        dbscan = MIDBSCAN(epsilon=best_eps, min_pts=min_pts, metric=metric)
-        scaler_name_str = "MinMaxScaler" if "MinMaxScaler" in str(scaler_cls) else "StandardScaler"
-        dist_matrix = global_persistent_cache.get(
-            dataset_name=name,
-            split="train",
-            scaler_name=scaler_name_str,
-            metric_name=metric,
-            bags=train_scaled.bags,
-            metric_func=DISTANCE_REGISTRY[metric]
-        )
-        dbscan._distance_matrix = dist_matrix
-        dbscan.fit(train_scaled)
-        
-        # Predicción en test (cluster labels crudas, incluyendo -1)
-        dbscan_pred_dict = dbscan.predict(test_scaled)
-        y_pred_raw_test = np.array([dbscan_pred_dict[bag.bag_id] for bag in test_scaled.bags])
-        
-        # Mapeo Húngaro usando los clusters encontrados en train
-        y_pred_train_raw = np.array([dbscan.labels.get(bag.bag_id, dbscan.NOISE_LABEL) for bag in train_scaled.bags])
-        _, mapping = MILEvaluator.hungarian_map_clusters_to_labels(y_true_train, y_pred_train_raw)
-        
-        # Aplicamos el mapeo a test
-        y_pred_dbscan_test = np.zeros_like(y_pred_raw_test)
-        for i, cluster in enumerate(y_pred_raw_test):
-            if cluster in mapping:
-                y_pred_dbscan_test[i] = mapping[cluster]
-            else:
-                y_pred_dbscan_test[i] = 0 # Fallback 0 si es un clúster no visto (o ruido sin mapear)
-                
-        dbscan_eval = evaluate_predictions(y_true_test, y_pred_dbscan_test)
-        
-        stats = dbscan.get_statistics()
-        clusters_count = stats.get("num_clusters", 0)
-        noise_pct = stats.get("noise_percentage", 100.0)
-        
-        # ---------------------------------------------------------
-        # MIKnn
-        # ---------------------------------------------------------
-        # Búsqueda del mejor k sobre una partición de validación extraída de train
-        train_sub, val_sub = train_scaled.split_data(percentage_train=80, seed=42)
-        y_true_val = np.array([int(float(bag.label)) for bag in val_sub.bags])
-        
-        best_k = 1
-        best_f1_knn = -1
-        
-        for k in [1, 3, 5]:
-            # Usar k min_bag para evitar error si k > N
-            k_eff = min(k, train_sub.get_num_bags())
-            if k_eff < 1: 
-                k_eff = 1
+        for seed in [42, 24]:
+            print(f"  --> Usando semilla: {seed}")
+            # Partición: 70% train / 30% test
+            train_data, test_data = dataset.split_data(percentage_train=70, seed=seed)
             
-            knn = MIKnn(k=k_eff, metric=metric)
-            knn.fit(train_sub)
-            val_preds = knn.predict(val_sub)
-            y_pred_val = np.array([val_preds.get(bag.bag_id, 0) for bag in val_sub.bags])
+            scaler = scaler_cls()
+            train_scaled = scaler.fit_transform(train_data)
+            test_scaled = scaler.transform(test_data)
             
-            f1_val = metrics.f1_score(y_true_val, y_pred_val, zero_division=0)
-            if f1_val > best_f1_knn:
-                best_f1_knn = f1_val
-                best_k = k_eff
+            y_true_train = np.array([int(float(bag.label)) for bag in train_scaled.bags])
+            y_true_test = np.array([int(float(bag.label)) for bag in test_scaled.bags])
+            
+            # ---------------------------------------------------------
+            # MIDBSCAN
+            # ---------------------------------------------------------
+            dbscan = MIDBSCAN(epsilon=best_eps, min_pts=min_pts, metric=metric)
+            scaler_name_str = "MinMaxScaler" if "MinMaxScaler" in str(scaler_cls) else "StandardScaler"
+            dist_matrix = global_persistent_cache.get(
+                dataset_name=f"{name}_seed{seed}",
+                split="train",
+                scaler_name=scaler_name_str,
+                metric_name=metric,
+                bags=train_scaled.bags,
+                metric_func=DISTANCE_REGISTRY[metric]
+            )
+            dbscan._distance_matrix = dist_matrix
+            dbscan.fit(train_scaled)
+            
+            # Predicción en test (cluster labels crudas, incluyendo -1)
+            dbscan_pred_dict = dbscan.predict(test_scaled)
+            y_pred_raw_test = np.array([dbscan_pred_dict[bag.bag_id] for bag in test_scaled.bags])
+            
+            # Mapeo Húngaro usando los clusters encontrados en train
+            y_pred_train_raw = np.array([dbscan.labels.get(bag.bag_id, dbscan.NOISE_LABEL) for bag in train_scaled.bags])
+            _, mapping = MILEvaluator.hungarian_map_clusters_to_labels(y_true_train, y_pred_train_raw)
+            
+            # Aplicamos el mapeo a test
+            y_pred_dbscan_test = np.zeros_like(y_pred_raw_test)
+            for i, cluster in enumerate(y_pred_raw_test):
+                if cluster in mapping:
+                    y_pred_dbscan_test[i] = mapping[cluster]
+                else:
+                    y_pred_dbscan_test[i] = 0 # Fallback 0 si es un clúster no visto (o ruido sin mapear)
+                    
+            dbscan_eval = evaluate_predictions(y_true_test, y_pred_dbscan_test)
+            
+            stats = dbscan.get_statistics()
+            clusters_count = stats.get("num_clusters", 0)
+            noise_pct = stats.get("noise_percentage", 100.0)
+            
+            # ---------------------------------------------------------
+            # MIKnn
+            # ---------------------------------------------------------
+            # Búsqueda del mejor k sobre una partición de validación extraída de train
+            train_sub, val_sub = train_scaled.split_data(percentage_train=80, seed=seed)
+            y_true_val = np.array([int(float(bag.label)) for bag in val_sub.bags])
+            
+            best_k = 1
+            best_f1_knn = -1
+            
+            for k in [1, 3, 5]:
+                # Usar k min_bag para evitar error si k > N
+                k_eff = min(k, train_sub.get_num_bags())
+                if k_eff < 1: 
+                    k_eff = 1
                 
-        # Entrenar modelo MIKnn final con el mejor k y todo el train
-        best_knn = MIKnn(k=best_k, metric=metric)
-        best_knn.fit(train_scaled)
-        knn_pred_dict = best_knn.predict(test_scaled)
-        y_pred_knn_test = np.array([knn_pred_dict.get(bag.bag_id, 0) for bag in test_scaled.bags])
-        
-        knn_eval = evaluate_predictions(y_true_test, y_pred_knn_test)
-        
-        delta_f1 = dbscan_eval["F1-Score"] - knn_eval["F1-Score"]
-        
-        res = {
-            "Dataset": name,
-            "F1-DBSCAN": round(dbscan_eval["F1-Score"], 4),
-            "F1-KNN (best k)": round(knn_eval["F1-Score"], 4),
-            "Δ F1": round(delta_f1, 4),
-            "Clusters": clusters_count,
-            "Noise%": round(noise_pct, 1),
-            "k*": best_k,
-            "DBSCAN-Acc": round(dbscan_eval["Accuracy"], 4),
-            "KNN-Acc": round(knn_eval["Accuracy"], 4),
-            "DBSCAN-Prec": round(dbscan_eval["Precision"], 4),
-            "KNN-Prec": round(knn_eval["Precision"], 4),
-            "DBSCAN-Rec": round(dbscan_eval["Recall"], 4),
-            "KNN-Rec": round(knn_eval["Recall"], 4),
-            "DBSCAN-Spec": round(dbscan_eval["Specificity"], 4),
-            "KNN-Spec": round(knn_eval["Specificity"], 4),
-            "DBSCAN-F1-Macro": round(dbscan_eval["F1-Macro"], 4),
-            "KNN-F1-Macro": round(knn_eval["F1-Macro"], 4)
-        }
-        all_results.append(res)
-        
-        print(f"  [+] DBSCAN F1: {dbscan_eval['F1-Score']:.4f} | KNN F1 (k={best_k}): {knn_eval['F1-Score']:.4f} | Δ F1: {delta_f1:+.4f}")
-        
-        # Generar matriz de confusión solo para los representativos
-        if name in REP_DATASETS:
-            plot_confusion_matrix(y_true_test, y_pred_dbscan_test, "MIDBSCAN", name, cm_dir)
-            plot_confusion_matrix(y_true_test, y_pred_knn_test, "MIKnn", name, cm_dir)
-            print(f"  [+] Matrices de confusión generadas en {cm_dir}")
+                knn = MIKnn(k=k_eff, metric=metric)
+                knn.fit(train_sub)
+                val_preds = knn.predict(val_sub)
+                y_pred_val = np.array([val_preds.get(bag.bag_id, 0) for bag in val_sub.bags])
+                
+                f1_val = metrics.f1_score(y_true_val, y_pred_val, zero_division=0)
+                if f1_val > best_f1_knn:
+                    best_f1_knn = f1_val
+                    best_k = k_eff
+                    
+            # Entrenar modelo MIKnn final con el mejor k y todo el train
+            best_knn = MIKnn(k=best_k, metric=metric)
+            best_knn.fit(train_scaled)
+            knn_pred_dict = best_knn.predict(test_scaled)
+            y_pred_knn_test = np.array([knn_pred_dict.get(bag.bag_id, 0) for bag in test_scaled.bags])
+            
+            knn_eval = evaluate_predictions(y_true_test, y_pred_knn_test)
+            
+            delta_f1 = dbscan_eval["F1-Score"] - knn_eval["F1-Score"]
+            
+            res = {
+                "Dataset": name,
+            "Seed": seed,
+                "F1-DBSCAN": round(dbscan_eval["F1-Score"], 4),
+                "F1-KNN (best k)": round(knn_eval["F1-Score"], 4),
+                "Δ F1": round(delta_f1, 4),
+                "Clusters": clusters_count,
+                "Noise%": round(noise_pct, 1),
+                "k*": best_k,
+                "DBSCAN-Acc": round(dbscan_eval["Accuracy"], 4),
+                "KNN-Acc": round(knn_eval["Accuracy"], 4),
+                "DBSCAN-Prec": round(dbscan_eval["Precision"], 4),
+                "KNN-Prec": round(knn_eval["Precision"], 4),
+                "DBSCAN-Rec": round(dbscan_eval["Recall"], 4),
+                "KNN-Rec": round(knn_eval["Recall"], 4),
+                "DBSCAN-Spec": round(dbscan_eval["Specificity"], 4),
+                "KNN-Spec": round(knn_eval["Specificity"], 4),
+                "DBSCAN-F1-Macro": round(dbscan_eval["F1-Macro"], 4),
+                "KNN-F1-Macro": round(knn_eval["F1-Macro"], 4)
+            }
+            all_results.append(res)
+            
+            print(f"  [+] DBSCAN F1: {dbscan_eval['F1-Score']:.4f} | KNN F1 (k={best_k}): {knn_eval['F1-Score']:.4f} | Δ F1: {delta_f1:+.4f}")
+            
+            # Generar matriz de confusión solo para los representativos
+            if name in REP_DATASETS:
+                plot_confusion_matrix(y_true_test, y_pred_dbscan_test, "MIDBSCAN", name, cm_dir)
+                plot_confusion_matrix(y_true_test, y_pred_knn_test, "MIKnn", name, cm_dir)
+                print(f"  [+] Matrices de confusión generadas en {cm_dir}")
 
     # Guardar CSV final
     ts = datetime.now().strftime("%d%m%Y%H%M")
     csv_path = os.path.join(RESULTS_DIR, f"full_eval_{ts}.csv")
     
     fieldnames = [
-        "Dataset", "F1-DBSCAN", "F1-KNN (best k)", "Δ F1", "Clusters", "Noise%", "k*",
+        "Dataset", "Seed", "F1-DBSCAN", "F1-KNN (best k)", "Δ F1", "Clusters", "Noise%", "k*",
         "DBSCAN-Acc", "KNN-Acc", "DBSCAN-Prec", "KNN-Prec", "DBSCAN-Rec", "KNN-Rec",
         "DBSCAN-Spec", "KNN-Spec", "DBSCAN-F1-Macro", "KNN-F1-Macro"
     ]

@@ -41,7 +41,7 @@ def run_statistical_tests(df, metric_col):
     print(f"{'='*50}")
     
     # Pivotar: Filas=Datasets, Columnas=Modelos, Valores=Métrica
-    pivot = df.pivot(index='Dataset', columns='Model', values=metric_col).dropna()
+    pivot = df.pivot_table(index=['Dataset', 'Seed'], columns='Model', values=metric_col).dropna()
     
     if pivot.empty or pivot.shape[1] < 2:
         print("Datos insuficientes para test estadístico (faltan métricas en algunos datasets).")
@@ -94,82 +94,85 @@ def main():
         print(f"\n[+] Procesando Dataset: {dataset_name} (Métrica: {metric_name})")
         dataset = ArffToMIData.from_arff(path)
         
-        # Partición 70/30 para evaluación externa justa
-        train_data, test_data = dataset.split_data(percentage_train=70, seed=42)
-        
-        # Escalar
-        scaler = scaler_cls()
-        train_scaled = scaler.fit_transform(train_data)
-        test_scaled = scaler.transform(test_data)
-        
-        y_true_train = np.array([int(float(bag.label)) for bag in train_scaled.bags])
-        y_true_test = np.array([int(float(bag.label)) for bag in test_scaled.bags])
-        
-        # k_real = cantidad de clases únicas
-        k_real = len(np.unique(np.concatenate([y_true_train, y_true_test])))
-        if k_real < 2: k_real = 2
+        for seed in [42, 24]:
+            print(f"  --> Usando semilla: {seed}")
+            # Partición 70/30 para evaluación externa justa
+            train_data, test_data = dataset.split_data(percentage_train=70, seed=seed)
             
-        metric_func = DISTANCE_REGISTRY.get(metric_name)
-        
-        # Cargar matriz de distancias (Train) para eficiencia en MIDBSCAN y MIKMedoids
-        dist_matrix_train = global_persistent_cache.get(
-            dataset_name=dataset_name,
-            split="train",
-            scaler_name=scaler_cls.__name__,
-            metric_name=metric_name,
-            bags=train_scaled.bags,
-            metric_func=metric_func
-        )
-        
-        models = {
-            "MI-DBSCAN": MIDBSCAN(epsilon=eps_abs, min_pts=min_pts, metric=metric_name),
-            "MI-KMeans": MIKMeans(k=k_real, metric=metric_name, random_state=42),
-            "MI-KMedoids": MIKMedoids(k=k_real, metric=metric_name, random_state=42)
-        }
-        
-        # Inyectar matriz precalculada
-        models["MI-DBSCAN"]._distance_matrix = dist_matrix_train
-        models["MI-KMedoids"]._distance_matrix = dist_matrix_train
-        
-        for model_name, model in models.items():
-            try:
-                # Entrenamiento
-                model.fit(train_scaled)
+            # Escalar
+            scaler = scaler_cls()
+            train_scaled = scaler.fit_transform(train_data)
+            test_scaled = scaler.transform(test_data)
+            
+            y_true_train = np.array([int(float(bag.label)) for bag in train_scaled.bags])
+            y_true_test = np.array([int(float(bag.label)) for bag in test_scaled.bags])
+            
+            # k_real = cantidad de clases únicas
+            k_real = len(np.unique(np.concatenate([y_true_train, y_true_test])))
+            if k_real < 2: k_real = 2
                 
-                # Predicción en test
-                test_pred_dict = model.predict(test_scaled)
-                y_pred_raw_test = np.array([test_pred_dict.get(bag.bag_id, -1) for bag in test_scaled.bags])
-                
-                # Mapeo Húngaro
-                train_pred_dict = getattr(model, "labels", {})
-                if not train_pred_dict:
-                    train_pred_dict = model.predict(train_scaled)
+            metric_func = DISTANCE_REGISTRY.get(metric_name)
+            
+            # Cargar matriz de distancias (Train) para eficiencia en MIDBSCAN y MIKMedoids
+            dist_matrix_train = global_persistent_cache.get(
+                dataset_name=f"{dataset_name}_seed{seed}",
+                split="train",
+                scaler_name=scaler_cls.__name__,
+                metric_name=metric_name,
+                bags=train_scaled.bags,
+                metric_func=metric_func
+            )
+            
+            models = {
+                "MI-DBSCAN": MIDBSCAN(epsilon=eps_abs, min_pts=min_pts, metric=metric_name),
+                "MI-KMeans": MIKMeans(k=k_real, metric=metric_name, random_state=seed),
+                "MI-KMedoids": MIKMedoids(k=k_real, metric=metric_name, random_state=seed)
+            }
+            
+            # Inyectar matriz precalculada
+            models["MI-DBSCAN"]._distance_matrix = dist_matrix_train
+            models["MI-KMedoids"]._distance_matrix = dist_matrix_train
+            
+            for model_name, model in models.items():
+                try:
+                    # Entrenamiento
+                    model.fit(train_scaled)
+                    
+                    # Predicción en test
+                    test_pred_dict = model.predict(test_scaled)
+                    y_pred_raw_test = np.array([test_pred_dict.get(bag.bag_id, -1) for bag in test_scaled.bags])
+                    
+                    # Mapeo Húngaro
+                    train_pred_dict = getattr(model, "labels", {})
+                    if not train_pred_dict:
+                        train_pred_dict = model.predict(train_scaled)
 
-                noise_label = getattr(model, "NOISE_LABEL", -1)
-                y_pred_train_raw = np.array([train_pred_dict.get(bag.bag_id, noise_label) for bag in train_scaled.bags])
-                
-                _, mapping = MILEvaluator.hungarian_map_clusters_to_labels(y_true_train, y_pred_train_raw)
-                y_pred_mapped = np.zeros_like(y_pred_raw_test)
-                for i, c in enumerate(y_pred_raw_test):
-                    if c in mapping:
-                        y_pred_mapped[i] = mapping[c]
-                    else:
-                        logging.warning(f"Clúster '{c}' encontrado en Test no estaba en el mapeo de Train. Usando fallback 0.")
-                        y_pred_mapped[i] = 0
-                
-                # Métricas
-                acc = accuracy_score(y_true_test, y_pred_mapped)
-                f1 = f1_score(y_true_test, y_pred_mapped, average='weighted')
-                
-                results.append({
-                    "Dataset": dataset_name,
-                    "Model": model_name,
-                    "Accuracy": acc,
-                    "F1_Score": f1
-                })
-                print(f"  - {model_name:<12} | F1-Score: {f1:.4f} | Accuracy: {acc:.4f}")
-            except Exception as e:
-                print(f"  - {model_name:<12} | ERROR: {e}")
+                    noise_label = getattr(model, "NOISE_LABEL", -1)
+                    y_pred_train_raw = np.array([train_pred_dict.get(bag.bag_id, noise_label) for bag in train_scaled.bags])
+                    
+                    _, mapping = MILEvaluator.hungarian_map_clusters_to_labels(y_true_train, y_pred_train_raw)
+                    y_pred_mapped = np.zeros_like(y_pred_raw_test)
+                    for i, c in enumerate(y_pred_raw_test):
+                        if c in mapping:
+                            y_pred_mapped[i] = mapping[c]
+                        else:
+                            logging.warning(f"Clúster '{c}' encontrado en Test no estaba en el mapeo de Train. Usando fallback 0.")
+                            y_pred_mapped[i] = 0
+                    
+                    # Métricas
+                    acc = accuracy_score(y_true_test, y_pred_mapped)
+                    f1 = f1_score(y_true_test, y_pred_mapped, average='weighted')
+                    
+                    results.append({
+                        "Dataset": dataset_name,
+                    "Seed": seed,
+                        "Model": model_name,
+                        "Accuracy": acc,
+                        "F1_Score": f1
+                    })
+                    print(f"  - {model_name:<12} | F1-Score: {f1:.4f} | Accuracy: {acc:.4f}")
+                except Exception as e:
+                    print(f"  - {model_name:<12} | ERROR: {e}")
 
     if not results:
         print("\n[!] No se generaron resultados validos.")
@@ -233,7 +236,7 @@ def main():
     plt.close()
     
     # Gráfica de calor Dataset vs Modelo (F1)
-    pivot_f1 = df.pivot(index='Dataset', columns='Model', values='F1_Score')
+    pivot_f1 = df.pivot_table(index='Dataset', columns='Model', values='F1_Score', aggfunc='mean')
     plt.figure(figsize=(10, 8))
     sns.heatmap(pivot_f1, annot=True, cmap="YlGnBu", fmt=".3f", cbar_kws={'label': 'F1-Score'})
     plt.title('Rendimiento (F1-Score) por Dataset y Modelo')
