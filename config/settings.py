@@ -12,7 +12,7 @@ from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler
 
 # ── Rutas Base ───────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATASETS_DIR = os.path.join(BASE_DIR, "datasets")
+DATASETS_DIR = os.path.join(BASE_DIR, "data", "datasets")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
 
 # Configurar la caché de la librería para reutilizar las matrices ya calculadas en TFG
