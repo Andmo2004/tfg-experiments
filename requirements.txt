@@ -1,9 +1,10 @@
-numpy
-pandas
-scipy
-scikit-learn
+numpy>=1.22.4,<2.0.0
+pandas>=2.2.0,<3.0.0
+scipy>=1.10.0
+scikit-learn>=1.2.0
 matplotlib
 seaborn
 tabulate
 optuna
+scikit-posthocs
 miclustering @ git+https://github.com/Andmo2004/MIClustering.git

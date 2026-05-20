@@ -11,9 +11,11 @@ import logging
 # Agregar el directorio raíz al PYTHONPATH
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
+
+from config.settings import KNOWN_BESTS, DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 import optuna.visualization as vis
 from optimization.best_params import run_optuna_search
 
@@ -27,7 +29,7 @@ def main():
     print("="*70)
     
     # Asegurar que la carpeta de resultados para las tramas de optuna existe
-    os.makedirs("results/optuna_plots", exist_ok=True)
+    os.makedirs(os.path.join(RESULTS_DIR, "optuna_plots"), exist_ok=True)
     
     # 2.1 Ejecutar la búsqueda de hiperparámetros
     # Nota: n_trials=100 como se define en 00_EXPERIMENTAL_PHASE.md
@@ -41,24 +43,29 @@ def main():
     representative_datasets = ["musk1", "BirdsHammonds", "Thioredoxin", "Newsgroups1", "ImageElephant", "BirdsChestnut"]
     
     print("\nGenerando visualizaciones de Optuna...")
+
+    out_dir = os.path.join(RESULTS_DIR, "optuna_plots")
+    os.makedirs(out_dir, exist_ok=True)
+
     for dataset_name, study in studies.items():
         try:
             # 2.2 Análisis de importancia de parámetros
             fig_importance = vis.plot_param_importances(study)
-            # Guardar en HTML siempre funciona
-            fig_importance.write_html(f"results/optuna_plots/param_importance_{dataset_name}.html")
+            
+            # Usamos out_dir directamente
+            fig_importance.write_html(os.path.join(out_dir, f"param_importance_{dataset_name}.html"))
             try:
                 # Requiere la librería kaleido o orca instalada
-                fig_importance.write_image(f"results/optuna_plots/param_importance_{dataset_name}.png")
+                fig_importance.write_image(os.path.join(out_dir, f"param_importance_{dataset_name}.png"))
             except ValueError:
                 pass # kaleido no está instalado
                 
             # 2.4 Gráficos de convergencia de Optuna
             if dataset_name in representative_datasets:
                 fig_history = vis.plot_optimization_history(study)
-                fig_history.write_html(f"results/optuna_plots/optimization_history_{dataset_name}.html")
+                fig_history.write_html(os.path.join(out_dir, f"optimization_history_{dataset_name}.html"))
                 try:
-                    fig_history.write_image(f"results/optuna_plots/optimization_history_{dataset_name}.png")
+                    fig_history.write_image(os.path.join(out_dir, f"optimization_history_{dataset_name}.png"))
                 except ValueError:
                     pass
                     

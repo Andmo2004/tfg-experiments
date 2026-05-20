@@ -15,22 +15,19 @@ warnings.filterwarnings('ignore')
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-src_dir = os.path.join(project_root, "src")
-if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
-from miclustering.data.midata import MIData
-from miclustering.models.midbscan import MIDBSCAN
-from miclustering.models.mikmeans import MIKMeans
-from miclustering.models.mikmedoids import MIKMedoids
-from miclustering.evaluation.bcm import MILEvaluator
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, mahalanobis_distance, earth_movers_distance
-from miclustering.distances.matrix_cache import global_persistent_cache
+
+from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
+from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
+from miclustering.models.mikmeans import MIKMeans # pyrefly: ignore [missing-import]
+from miclustering.models.mikmedoids import MIKMedoids # pyrefly: ignore [missing-import]
+from miclustering.evaluation.bcm import MILEvaluator # pyrefly: ignore [missing-import]
+from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
+from miclustering.distances.probability_distribution import cauchy_schwarz_distance, mahalanobis_distance, earth_movers_distance # pyrefly: ignore [missing-import]
+from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -154,6 +151,9 @@ def main():
                 
                 # Mapeo Húngaro
                 train_pred_dict = getattr(model, "labels", {})
+                if not train_pred_dict:
+                    train_pred_dict = model.predict(train_scaled)
+
                 noise_label = getattr(model, "NOISE_LABEL", -1)
                 y_pred_train_raw = np.array([train_pred_dict.get(bag.bag_id, noise_label) for bag in train_scaled.bags])
                 

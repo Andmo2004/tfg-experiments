@@ -1,40 +1,36 @@
 import os
 import sys
+import time
 import numpy as np
 import pandas as pd
 from scipy.stats import friedmanchisquare, wilcoxon, spearmanr, pearsonr
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import silhouette_score, davies_bouldin_score, accuracy_score, f1_score
-from datetime import datetime
+import scikit_posthocs as sp # pyrefly: ignore [missing-import]
+
 import logging
 import warnings
 
-# Suprimir advertencias menores para salida limpia en consola
 warnings.filterwarnings('ignore')
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-src_dir = os.path.join(project_root, "src")
-if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
+
 from miclustering.data.midata import MIData
 from miclustering.preprocessing.scaler import MinMaxScaler
-from miclustering.models.mikmedoids import MIKMedoids
+from miclustering.models.midbscan import MIDBSCAN
 from miclustering.evaluation.bcm import MILEvaluator
 from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
 from miclustering.distances.probability_distribution import cauchy_schwarz_distance, mahalanobis_distance
-from miclustering.distances.matrix_cache import global_persistent_cache
+from miclustering.distances.distance_matrix import compute_distance_matrix
 
 logging.basicConfig(level=logging.WARNING)
 
-# Excluimos Earth Movers Distance por su alto coste computacional en algunos datasets,
-# pero incluimos las principales distancias del proyecto.
 DISTANCES = {
     "hausdorff": hausdorff_distance,
     "hausdorff_min": hausdorff_distance_min,
@@ -44,57 +40,77 @@ DISTANCES = {
 }
 
 def get_bag_centroids(dataset):
-    """Calcula el centroide medio de cada bolsa para métricas basadas en características (ej. Davies-Bouldin)"""
     centroids = []
     for bag in dataset.bags:
         centroids.append(np.mean(bag.as_matrix(), axis=0))
     return np.array(centroids)
 
-def run_statistical_tests(df, metric_col, maximize=True):
+def generate_plots(csv_path, out_dir):
     """
-    Realiza Test de Friedman para ver si hay diferencias significativas globales
-    y luego Test de Wilcoxon post-hoc para comparar la mejor distancia contra el resto.
+    Genera gráficos similares al paper: Boxplots con stripplot y Diagramas de Diferencias Críticas (Nemenyi).
     """
-    print(f"\n{'='*50}")
-    print(f" Análisis Estadístico para {metric_col}")
-    print(f"{'='*50}")
-    
-    # Pivotar: Filas=Datasets, Columnas=Distancias, Valores=Métrica
-    pivot = df.pivot(index='Dataset', columns='Metric', values=metric_col).dropna()
-    
-    if pivot.empty or pivot.shape[1] < 2:
-        print("Datos insuficientes para test estadístico (faltan métricas en algunos datasets).")
+    if not os.path.exists(csv_path):
+        print(f"No se encontró el archivo {csv_path}")
         return
         
-    distances = pivot.columns.tolist()
-    data_matrix = [pivot[d].values for d in distances]
+    df = pd.read_csv(csv_path)
+    os.makedirs(out_dir, exist_ok=True)
     
-    # Test de Friedman
-    stat, p = friedmanchisquare(*data_matrix)
-    print(f"Test de Friedman: estadístico={stat:.4f}, p-value={p:.5f}")
+    # 1. GENERAR BOXPLOTS AL ESTILO DEL PAPER
+    metrics = ["Silhouette", "Davies_Bouldin", "Accuracy", "F1_Score"]
     
-    if p < 0.05:
-        print(">> Diferencias significativas detectadas (p < 0.05). Aplicando Wilcoxon post-hoc...")
-        means = pivot.mean()
-        best_dist = means.idxmax() if maximize else means.idxmin()
-        print(f"\nMejor distancia promedio: {best_dist} ({means[best_dist]:.4f})")
-        print("\nComparaciones Pair-wise (Wilcoxon):")
+    for metric in metrics:
+        if metric not in df.columns: continue
         
-        for d in distances:
-            if d != best_dist:
-                try:
-                    stat_w, p_wilc = wilcoxon(pivot[best_dist], pivot[d])  # type: ignore
-                    p_wilc = float(p_wilc)  # type: ignore
-                    signif = "*" if p_wilc < 0.05 else " "
-                    print(f"  {best_dist} vs {d:<15} : p-value = {p_wilc:.5f} {signif}")
-                except Exception as e:
-                    print(f"  {best_dist} vs {d:<15} : Error en Wilcoxon ({e})")
-    else:
-        print(">> No se encontraron diferencias significativas globales entre las distancias.")
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(data=df, x='Metric', y=metric, palette="vlag", showfliers=False, width=0.6)
+        sns.stripplot(data=df, x='Metric', y=metric, color=".2", alpha=0.6, jitter=True, size=5)
+        
+        plt.title(f'Distribución de {metric} por Distancia', fontsize=14)
+        plt.xlabel('Medida de Distancia', fontsize=12)
+        plt.ylabel(f'Índice {metric}', fontsize=12)
+        plt.xticks(rotation=15)
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        
+        plot_path = os.path.join(out_dir, f"boxplot_{metric}.png")
+        plt.savefig(plot_path, dpi=300)
+        plt.close()
+        print(f"Guardado boxplot para {metric} en {plot_path}")
+
+    # 2. GENERAR GRÁFICO DE LÍNEAS (DIFERENCIAS CRÍTICAS TIPO NEMENYI)
+    for metric in metrics:
+        if metric not in df.columns: continue
+        
+        pivot_df = df.pivot(index='Dataset', columns='Metric', values=metric).dropna()
+        if pivot_df.empty or pivot_df.shape[1] < 2: continue
+        
+        if sp is None:
+            print("scikit_posthocs no disponible, se omiten los diagramas Nemenyi.")
+            continue
+        
+        ascending = True if metric == "Davies_Bouldin" else False
+        
+        nemenyi_results = sp.posthoc_nemenyi_friedman(pivot_df.values)
+        nemenyi_results.columns = pivot_df.columns
+        nemenyi_results.index = pivot_df.columns
+        
+        plt.figure(figsize=(10, 4))
+        plt.title(f'Test de Nemenyi para {metric} (a=0.05)', pad=20)
+        
+        try:
+            sp.sign_plot(nemenyi_results, alpha=0.05)
+        except AttributeError:
+            print("Versión de scikit-posthocs no soporta diagrama CD directo, usando heatmap.")
+            sns.heatmap(nemenyi_results < 0.05, annot=True, cmap="Blues", cbar=False)
+            
+        plot_path = os.path.join(out_dir, f"nemenyi_{metric}.png")
+        plt.savefig(plot_path, bbox_inches='tight', dpi=300)
+        plt.close()
+        print(f"Guardado test Nemenyi para {metric} en {plot_path}")
 
 def main():
-    print("Iniciando Fase 3: Estudio del Impacto de la Distancia...")
-    
+    print("Iniciando Fase 3: Estudio del Impacto de la Distancia (DBSCAN-MIL)...")
     results = []
     
     for config in DATASETS_CONFIG:
@@ -108,59 +124,41 @@ def main():
         print(f"\n[+] Procesando Dataset: {dataset_name}")
         dataset = MIData.from_arff(path)
         
-        # Estandarizamos escalar en [0,1] para este experimento de aislamiento de métrica
         scaler = MinMaxScaler()
         scaled_dataset = scaler.fit_transform(dataset)
         
         y_true = np.array([int(float(bag.label)) for bag in scaled_dataset.bags])
-        k_real = len(np.unique(y_true))
-        if k_real < 2: k_real = 2
-            
         X_centroids = get_bag_centroids(scaled_dataset)
         
         for metric_name, metric_func in DISTANCES.items():
             print(f"  - Métrica evaluada: {metric_name}")
             
-            # Cargar/Calcular la matriz desde caché persistente
-            dist_matrix = global_persistent_cache.get(
-                dataset_name=dataset_name,
-                split="full",
-                scaler_name="MinMaxScaler",
-                metric_name=metric_name,
-                bags=scaled_dataset.bags,
-                metric_func=metric_func
-            )
+            model = MIDBSCAN(epsilon=0.368, min_pts=2, metric=metric_name)
             
-            # Utilizamos MIKMedoids en lugar de MIDBSCAN para evitar que un hyperparámetro
-            # dependiente de la escala como "epsilon" contamine la comparativa pura de distancias.
-            # Al darle K real, forzamos la partición y medimos la bondad de la distancia.
-            model = MIKMedoids(k=k_real, metric=metric_name, random_state=42)
+            start_time = time.time()
+            dist_matrix = compute_distance_matrix(scaled_dataset.bags, metric_func, metric_name)
             model._distance_matrix = dist_matrix
             model.fit(scaled_dataset)
-            
-            y_pred_raw = np.array([model.labels.get(bag.bag_id, 0) for bag in scaled_dataset.bags])
+            exec_time = time.time() - start_time
+
+            pred_dict = getattr(model, "labels", {})
+            y_pred_raw = np.array([pred_dict.get(bag.bag_id, -1) for bag in scaled_dataset.bags])
             
             if len(np.unique(y_pred_raw)) < 2:
-                # El modelo colapsó todos los puntos a 1 clúster
                 continue
                 
-            # MÉTRICAS INTERNAS
             try:
-                # Copia para garantizar que la diagonal sea exactamente cero
                 dist_matrix_copy = dist_matrix.copy()
                 np.fill_diagonal(dist_matrix_copy, 0)
-                sil = silhouette_score(dist_matrix_copy, y_pred_raw, metric="precomputed")  # type: ignore
+                sil = silhouette_score(dist_matrix_copy, y_pred_raw, metric="precomputed")
             except Exception:
                 sil = np.nan
                 
             try:
-                # DB usa los centroides generados
-                db = davies_bouldin_score(X_centroids, y_pred_raw)  # type: ignore
+                db = davies_bouldin_score(X_centroids, y_pred_raw)
             except:
                 db = np.nan
                 
-            # MÉTRICAS EXTERNAS
-            # Modelos particionales requieren Hungarian mapping para emparejar etiquetas clúster con reales
             _, mapping = MILEvaluator.hungarian_map_clusters_to_labels(y_true, y_pred_raw)
             y_pred_mapped = np.array([mapping.get(c, 0) for c in y_pred_raw])
             
@@ -173,56 +171,53 @@ def main():
                 "Silhouette": sil,
                 "Davies_Bouldin": db,
                 "Accuracy": acc,
-                "F1_Score": f1
+                "F1_Score": f1,
+                "Exec_Time_Secs": exec_time
             })
 
     if not results:
         print("\n[!] No se generaron resultados validos.")
         return
 
-    # Limpiamos resultados NaN
     df = pd.DataFrame(results).dropna()
-    
     out_dir = os.path.join(RESULTS_DIR, "fase3_distancias")
     os.makedirs(out_dir, exist_ok=True)
-    
-    csv_path = os.path.join(out_dir, "resultados_distancias.csv")
+    csv_path = os.path.join(out_dir, "resultados_dbscan_tiempos.csv")
     df.to_csv(csv_path, index=False)
-    print(f"\n[+] Métricas crudas guardadas en {csv_path}")
 
-    # TESTS ESTADÍSTICOS (FRIEDMAN & WILCOXON)
-    run_statistical_tests(df, "Silhouette", maximize=True)
-    run_statistical_tests(df, "Davies_Bouldin", maximize=False)
-    run_statistical_tests(df, "F1_Score", maximize=True)
-
-    # ESTUDIO DE CORRELACIÓN (Spearman/Pearson)
+    # Gráfico Trade-off (Tiempo vs F1-Score)
     print(f"\n{'='*50}")
-    print(" Estudio de Correlación (Métrica Interna vs Externa)")
+    print(" Generando gráfico de Trade-off (Time vs F1-Score)")
     print(f"{'='*50}")
     
-    metrics_to_corr = [("Silhouette", "F1_Score"), ("Davies_Bouldin", "F1_Score")]
+    plt.figure(figsize=(10, 7))
+    sns.scatterplot(
+        data=df, 
+        x="Exec_Time_Secs", 
+        y="F1_Score", 
+        hue="Metric", 
+        style="Dataset", 
+        s=150, 
+        alpha=0.8,
+        palette="Set2"
+    )
+    plt.title("Trade-off: Complejidad Temporal vs Rendimiento (MIDBSCAN)", fontsize=14)
+    plt.xlabel("Tiempo de Ejecución (Segundos)", fontsize=12)
+    plt.ylabel("F1-Score", fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "tradeoff_time_vs_f1.png"), dpi=300)
+    plt.close()
     
-    for int_m, ext_m in metrics_to_corr:
-        spearman_corr, sp_p = spearmanr(df[int_m], df[ext_m])
-        pearson_corr, pe_p = pearsonr(df[int_m], df[ext_m])
-        
-        print(f"\nCorrelación {int_m} vs {ext_m}:")
-        print(f"  Spearman: {spearman_corr:.4f} (p-value={sp_p:.4f})")
-        print(f"  Pearson:  {pearson_corr:.4f} (p-value={pe_p:.4f})")
-        
-        # Gráfica de Dispersión
-        plt.figure(figsize=(8, 6))
-        sns.scatterplot(data=df, x=int_m, y=ext_m, hue="Metric", style="Dataset", s=100)
-        plt.title(f"Correlación: {int_m} vs {ext_m}\nSpearman: {spearman_corr:.2f} | Pearson: {pearson_corr:.2f}")
-        
-        # Añadir línea de tendencia
-        sns.regplot(data=df, x=int_m, y=ext_m, scatter=False, color='gray', line_kws={"linestyle": "--", "alpha": 0.5})
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(out_dir, f"corr_{int_m}_{ext_m}.png"))
-        plt.close()
-        
-    print(f"\n[+] Gráficos de correlación generados en {out_dir}")
+    print(f"[+] Gráfico Trade-off guardado en {out_dir}")
+    
+    # Generar gráficos estilo paper
+    print(f"\n{'='*50}")
+    print(" Generando gráficos estilo paper (Boxplots y Nemenyi)")
+    print(f"{'='*50}")
+    plots_dir = os.path.join(out_dir, "plots")
+    generate_plots(csv_path, plots_dir)
 
 if __name__ == "__main__":
     main()

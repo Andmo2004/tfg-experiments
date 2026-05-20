@@ -14,18 +14,18 @@ from typing import Any, Dict, List
 # Configurar PYTHONPATH
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 import numpy as np
 from scipy.stats import spearmanr
 
-from miclustering.data.midata import MIData
-from miclustering.models.midbscan import MIDBSCAN
-from miclustering.evaluation.cvi import InternalCVIEvaluator, SEDIndex, DDIndex, HcIndex, VRCIndex, IIndex
-from miclustering.distances.matrix_cache import global_persistent_cache
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance
+from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
+from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
+from miclustering.evaluation.cvi import InternalCVIEvaluator, SEDIndex, DDIndex, HcIndex, VRCIndex, IIndex # pyrefly: ignore [missing-import]
+from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
+from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance # pyrefly: ignore [missing-import]
 
 DISTANCES = {
     "hausdorff": hausdorff_distance,
@@ -185,8 +185,12 @@ def main():
 
     # Guardar CSV
     ts = datetime.now().strftime("%d%m%Y%H%M")
-    csv_path = os.path.join(RESULTS_DIR, f"cvi_comparative_{ts}.csv")
-    
+
+    out_dir = os.path.join(RESULTS_DIR, "eda")
+    os.makedirs(out_dir, exist_ok=True)
+
+    csv_path = os.path.join(out_dir, f"cvi_comparative_{ts}.csv")
+
     fieldnames = ["Dataset", "Configuración", "Clusters", "Noise%", "SED", "DD", "Hc", "VRC", "I"]
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

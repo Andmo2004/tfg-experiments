@@ -23,8 +23,8 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from miclustering.data.midata import MIData
 from miclustering.models.midbscan import MIDBSCAN
@@ -37,6 +37,13 @@ from miclustering.evaluation.scoring import detect_imbalance_ratio, score_labels
 # Métricas de distancia
 from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
 from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance
+
+# Cache
+from miclustering.distances.matrix_cache import global_persistent_cache
+
+# Importamos configuraciones previas óptimas (Best Known Configurations)
+from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR, KNOWN_BESTS
+
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -54,13 +61,6 @@ DISTANCES = {
     "earth_movers": earth_movers_distance,
     "mahalanobis": mahalanobis_distance
 }
-
-# --- NUEVA LÓGICA DE WARM STARTING ---
-# Importamos configuraciones previas óptimas (Best Known Configurations)
-from config.settings import KNOWN_BESTS, DATASETS_CONFIG
-
-from miclustering.distances.matrix_cache import global_persistent_cache
-
 
 def create_objective(dataset: MIData, dataset_name: str):
     """
@@ -162,7 +162,7 @@ def run_optuna_search(n_trials: int = 100):
         
         print(f"\n► Procesando Dataset: {dataset_name}...")
         global_persistent_cache.clear_memory()
-        path = os.path.join("datasets", f"{arff_name}.arff")
+        path = os.path.join(DATASETS_DIR, f"{arff_name}.arff")
         if not os.path.exists(path):
             print(f"  [!] No se encontró el archivo: {path}. Omitiendo.")
             continue
@@ -269,7 +269,7 @@ def run_optuna_search(n_trials: int = 100):
     # Guardar todos los mejores en CSV
     if results:
         ts = datetime.now().strftime("%d%m%Y%H%M")
-        csv_file = os.path.join("results", f"optuna_best_params_{ts}.csv")
+        csv_file = os.path.join(RESULTS_DIR, f"optuna_best_params_{ts}.csv")
         
         with open(csv_file, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=[

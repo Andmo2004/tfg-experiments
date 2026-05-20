@@ -14,8 +14,8 @@ from scipy.stats import wilcoxon, norm
 # Configurar PYTHONPATH
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from config.settings import RESULTS_DIR
 

@@ -14,8 +14,8 @@ from sklearn.manifold import TSNE
 import seaborn as sns
 from typing import Literal, Dict, Any, Optional
 
-from miclustering.models.midbscan import MIDBSCAN
-from miclustering.data.midata import MIData
+from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
+from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
 
 _DEFAULT_DISTRIB_DIR = "results/bags_distrib_plots"
 
@@ -209,7 +209,7 @@ def plot_bags_distribution(
 
 
 if __name__ == '__main__':
-    from miclustering.preprocessing.scaler import MinMaxScaler
+    from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]
 
     files = [
         "datasets/Thioredoxin.arff",

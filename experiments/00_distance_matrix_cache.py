@@ -11,15 +11,15 @@ import logging
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-from config.settings import DATASETS_CONFIG
-from miclustering.data.midata import MIData
-from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler
-from miclustering.distances.matrix_cache import global_persistent_cache
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance
+from config.settings import DATASETS_DIR, RESULTS_DIR, DATASETS_CONFIG
+from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
+from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler # pyrefly: ignore [missing-import]
+from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
+from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance # pyrefly: ignore [missing-import]
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -42,6 +42,9 @@ def precompute_matrices():
     print("PRECOMPUTANDO MATRICES DE DISTANCIA (CACHÉ PERSISTENTE)")
     print("=" * 80)
 
+    output_dir = os.path.join(RESULTS_DIR, "distance_matrices")
+    os.makedirs(output_dir, exist_ok=True)
+
     # Seed
     seed = 42
     
@@ -50,7 +53,7 @@ def precompute_matrices():
         arff_name = config["arff_name"]
         
         print(f"\n► Procesando Dataset: {dataset_name}")
-        path = os.path.join("datasets", f"{arff_name}.arff")
+        path = os.path.join(DATASETS_DIR, f"{arff_name}.arff")
         if not os.path.exists(path):
             print(f"  [!] No se encontró el archivo: {path}. Omitiendo.")
             continue

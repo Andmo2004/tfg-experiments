@@ -12,14 +12,16 @@ import numpy as np
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-from miclustering.data.midata import MIData
-from miclustering.preprocessing.scaler import MinMaxScaler
-from miclustering.distances.matrix_cache import global_persistent_cache
-from miclustering.distances.hausdorff import hausdorff_distance
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance
+from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
+
+from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
+from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]
+from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.distances.hausdorff import hausdorff_distance # pyrefly: ignore [missing-import]
+from miclustering.distances.probability_distribution import cauchy_schwarz_distance # pyrefly: ignore [missing-import]
 
 from visualization.heatmap import plot_distance_heatmap
 from visualization.boxplots import plot_instances_per_bag_boxplot
@@ -70,8 +72,8 @@ def analyze_distances(dist_matrix: np.ndarray, sorted_bags: list) -> tuple:
     return mean_intra, mean_inter, sep_ratio, cv_intra
 
 def run_phase_1():
-    os.makedirs("results/eda", exist_ok=True)
-    os.makedirs("results/output_heatmaps", exist_ok=True)
+    os.makedirs(os.path.join(RESULTS_DIR, "eda"), exist_ok=True)
+    os.makedirs(os.path.join(RESULTS_DIR, "output_heatmaps"), exist_ok=True)
     
     summary_data = []
     
@@ -87,7 +89,7 @@ def run_phase_1():
         
         print(f"\n► Analizando Dataset: {dataset_name}...")
         
-        path = os.path.join("datasets", f"{arff_name}.arff")
+        path = os.path.join(DATASETS_DIR, f"{arff_name}.arff")
         if not os.path.exists(path):
             print(f"  [!] No se encontró el archivo: {path}. Omitiendo.")
             continue
@@ -140,7 +142,7 @@ def run_phase_1():
             bag_ids=bag_ids_sorted,
             title=f"Heatmap {dataset_name} - Hausdorff",
             metric="hausdorff",
-            output_dir="results/output_heatmaps",
+            output_dir=os.path.join(RESULTS_DIR, "output_heatmaps"),
             filename=f"heatmap_{dataset_name}_hausdorff"
         )
         
@@ -163,7 +165,7 @@ def run_phase_1():
             bag_ids=bag_ids_sorted,
             title=f"Heatmap {dataset_name} - Cauchy-Schwarz",
             metric="cauchy_schwarz",
-            output_dir="results/output_heatmaps",
+            output_dir=os.path.join(RESULTS_DIR, "output_heatmaps"),
             filename=f"heatmap_{dataset_name}_cauchy_schwarz"
         )
         
@@ -189,7 +191,11 @@ def run_phase_1():
         })
         
     # 8. Guardar todo en un CSV de resumen
-    csv_file = "results/eda/eda_summary.csv"
+    out_dir = os.path.join(RESULTS_DIR, "eda")
+    os.makedirs(out_dir, exist_ok=True)
+
+    csv_file = os.path.join(out_dir, "eda_summary.csv")
+
     with open(csv_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=[
             "Dataset", "n_bags", "n_pos", "n_neg", "inst_min", 

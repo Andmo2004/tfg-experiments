@@ -13,8 +13,8 @@ from typing import Dict
 # Configurar PYTHONPATH
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, "src"))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 import numpy as np
 from sklearn import metrics
@@ -22,13 +22,13 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from miclustering.data.midata import MIData
-from miclustering.models.midbscan import MIDBSCAN
-from miclustering.models.miknn import MIKnn
-from miclustering.evaluation.bcm import MILEvaluator
-from miclustering.distances.matrix_cache import global_persistent_cache
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance
+from miclustering.data.midata import MIData # pyrefly: ignore [missing-import] 
+from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
+from miclustering.models.miknn import MIKnn # pyrefly: ignore [missing-import]
+from miclustering.evaluation.bcm import MILEvaluator # pyrefly: ignore [missing-import]
+from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
+from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance # pyrefly: ignore [missing-import]
 
 DISTANCES = {
     "hausdorff": hausdorff_distance,
