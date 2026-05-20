@@ -1,5 +1,7 @@
 import os
 import sys
+from miclustering.distances.hausdorff import hausdorff_distance
+from miclustering.data.arff_reader import ArffToMIData
 import random
 import numpy as np
 import pandas as pd

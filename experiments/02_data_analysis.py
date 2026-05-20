@@ -6,6 +6,7 @@ de las distancias (heatmaps) y tamaños de las bolsas (boxplots).
 
 import os
 import sys
+from miclustering.data.arff_reader import ArffToMIData
 import csv
 import logging
 import numpy as np

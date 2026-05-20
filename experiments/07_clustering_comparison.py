@@ -1,5 +1,6 @@
 import os
 import sys
+from miclustering.data.arff_reader import ArffToMIData
 import numpy as np
 import pandas as pd
 from scipy.stats import friedmanchisquare, wilcoxon

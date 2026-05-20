@@ -8,6 +8,7 @@ Esto permite ahorrar muchísimo tiempo en las fases siguientes del experimento.
 
 import os
 import sys
+from miclustering.data.arff_reader import ArffToMIData
 import logging
 
 current_dir = os.path.dirname(os.path.abspath(__file__))

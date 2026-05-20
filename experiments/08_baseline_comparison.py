@@ -6,6 +6,7 @@ Propósito: Responder la pregunta central del TFG: ¿es MIDBSCAN competitivo fre
 
 import os
 import sys
+from miclustering.data.arff_reader import ArffToMIData
 import csv
 import logging
 from datetime import datetime

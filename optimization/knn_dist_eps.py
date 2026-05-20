@@ -6,6 +6,7 @@ from typing import Callable, Optional, Tuple, List
 ######## SOLO PARA TEST UNITARIO
 import os
 import sys
+from miclustering.data.arff_reader import ArffToMIData
 # Agregar root del proyecto al path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
