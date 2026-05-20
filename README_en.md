@@ -27,6 +27,10 @@ The thesis investigates whether DBSCAN, adapted to operate directly on Multi-Ins
 
 The experimental pipeline covers five phases:
 
+<p align="center">
+  <img src="data/img_phases.jpg" alt="Proceso de exeperimentación" width="600">
+</p>
+
 | Phase | Script | Purpose |
 |---|---|---|
 | 0 | `00_precompute_matrices.py` | Cache all distance matrices to disk |

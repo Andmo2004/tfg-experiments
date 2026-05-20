@@ -81,8 +81,14 @@ cython_debug/
 # Data and results (optional, comment out if you want to keep these in git)
 *.csv
 **/*.csv
-#*.arff
 *.png
+*.arff
+**/*.arff
+*.npy
+**/*.npy
+
+# Imagenes del README.md
+!**/img_phases.jpg
 
 # Databases
 *.db
@@ -95,9 +101,3 @@ cython_debug/
 # Optuna plots & artifacts
 optuna_plots/
 **/*.html
-
-# Data files
-*.arff
-**/*.arff
-*.npy
-**/*.npy

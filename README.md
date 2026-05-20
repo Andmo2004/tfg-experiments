@@ -27,6 +27,10 @@ El TFG investiga si DBSCAN, adaptado para operar directamente sobre bolsas de *M
 
 El flujo de experimentación (*pipeline*) abarca cinco fases:
 
+<p align="center">
+  <img src="data/img_phases.jpg" alt="Proceso de exeperimentación" width="600">
+</p>
+
 | Fase | Script | Propósito |
 |---|---|---|
 | 0 | `00_precompute_matrices.py` | Almacenar en caché todas las matrices de distancia en el disco |
