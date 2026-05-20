@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
     for file_path in files:
 
-        dataset = MIData.from_arff(file_path)
+        dataset = ArffToMIData.from_arff(file_path)
 
         plot_bags_distribution(
             dataset=dataset,

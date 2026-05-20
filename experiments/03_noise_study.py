@@ -67,7 +67,7 @@ def main():
         if not os.path.exists(path): continue
             
         print(f"\n[+] Procesando: {dataset_name}")
-        dataset = MIData.from_arff(path)
+        dataset = ArffToMIData.from_arff(path)
         
         # 1. Normalizar el dataset limpio
         scaler = MinMaxScaler()

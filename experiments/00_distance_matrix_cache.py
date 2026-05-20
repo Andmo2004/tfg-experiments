@@ -58,7 +58,7 @@ def precompute_matrices():
             print(f"  [!] No se encontró el archivo: {path}. Omitiendo.")
             continue
             
-        dataset_full = MIData.from_arff(path)
+        dataset_full = ArffToMIData.from_arff(path)
         train_data, _ = dataset_full.split_data(percentage_train=70, seed=seed)
         
         available_metrics = list(DISTANCES.keys())

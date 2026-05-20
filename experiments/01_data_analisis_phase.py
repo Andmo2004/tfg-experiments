@@ -95,7 +95,7 @@ def run_phase_1():
             continue
             
         # Cargar y dividir
-        dataset_full = MIData.from_arff(path)
+        dataset_full = ArffToMIData.from_arff(path)
         train_data, _ = dataset_full.split_data(percentage_train=70, seed=42)
         
         # 1. Escalar (MinMaxScaler como base estandarizada para el EDA)

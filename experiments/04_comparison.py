@@ -101,7 +101,7 @@ def main():
             continue
             
         print(f"\n[+] Procesando Dataset: {dataset_name} (Métrica: {metric_name})")
-        dataset = MIData.from_arff(path)
+        dataset = ArffToMIData.from_arff(path)
         
         # Partición 70/30 para evaluación externa justa
         train_data, test_data = dataset.split_data(percentage_train=70, seed=42)

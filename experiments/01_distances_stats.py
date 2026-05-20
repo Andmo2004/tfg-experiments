@@ -121,7 +121,7 @@ def main():
             continue
             
         print(f"\n[+] Procesando Dataset: {dataset_name}")
-        dataset = MIData.from_arff(path)
+        dataset = ArffToMIData.from_arff(path)
         
         scaler = MinMaxScaler()
         scaled_dataset = scaler.fit_transform(dataset)

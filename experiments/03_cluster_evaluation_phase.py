@@ -149,7 +149,7 @@ def main():
             print(f"  [!] Archivo no encontrado: {path}")
             continue
             
-        dataset = MIData.from_arff(path)
+        dataset = ArffToMIData.from_arff(path)
         train, _ = dataset.split_data(percentage_train=70, seed=42)
         
         scaler = scaler_cls()

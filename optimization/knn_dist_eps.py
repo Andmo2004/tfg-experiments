@@ -237,7 +237,7 @@ if __name__ == "__main__":
     try:
         # 1. Cargar dataset
         logger.info("Cargando dataset musk1.arff...")
-        dataset = MIData.from_arff("datasets/musk1.arff")
+        dataset = ArffToMIData.from_arff("datasets/musk1.arff")
         logger.info(f"Dataset cargado: {dataset.get_num_bags()} bolsas")
         
         # 2. Normalizar con MinMaxScaler

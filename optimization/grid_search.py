@@ -39,6 +39,11 @@ def grid_search_dbscan(
     Busca la combinación óptima de (eps, min_pts) para MIDBSCAN evaluando
     directamente sobre el conjunto de entrenamiento con etiquetas ground-truth.
 
+    del conjunto de entrenamiento para la selección de hiperparámetros (F1 score).
+    Los mejores parámetros fueron seleccionados observando las etiquetas, ya que en un contexto
+    estrictamente no supervisado esto podría considerarse fuga de información 
+    (data leakage) debo documentarlo.
+
     Workflow:
       1. Calcula la matriz de distancias una sola vez.
       2. Para cada min_pts candidato, estima un eps base con knn_dist_eps.

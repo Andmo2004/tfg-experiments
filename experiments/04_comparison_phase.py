@@ -106,7 +106,7 @@ def main():
             print(f"  [!] Archivo no encontrado: {path}")
             continue
             
-        dataset = MIData.from_arff(path)
+        dataset = ArffToMIData.from_arff(path)
         # Partición: 70% train / 30% test
         train_data, test_data = dataset.split_data(percentage_train=70, seed=42)
         

@@ -168,7 +168,7 @@ def run_optuna_search(n_trials: int = 100):
             continue
             
         # Cargar y dividir de manera idéntica al main/test_full_eval
-        dataset_full = MIData.from_arff(path)
+        dataset_full = ArffToMIData.from_arff(path)
         train_data, _ = dataset_full.split_data(percentage_train=70, seed=42)
         
         study_name = f"midbscan_optuna_{dataset_name}"

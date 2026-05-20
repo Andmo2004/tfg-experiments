@@ -26,17 +26,7 @@ import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 from miclustering.distances.matrix_cache import global_persistent_cache
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance
-
-DISTANCES_REGISTRY = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_min": hausdorff_distance_min,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "cauchy_schwarz": cauchy_schwarz_distance,
-    "earth_movers": earth_movers_distance,
-    "mahalanobis": mahalanobis_distance
-}
+from miclustering.distances import DISTANCE_REGISTRY as DISTANCES_REGISTRY
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -101,7 +91,7 @@ def main():
         logger.error(f"Dataset no encontrado en la ruta esperada: {dataset_path}")
         return
 
-    dataset = MIData.from_arff(dataset_path)
+    dataset = ArffToMIData.from_arff(dataset_path)
     train_data, test_data = dataset.split_data(percentage_train=70, seed=seed)
     
     logger.info(f"Datos cargados: Train ({train_data.get_num_bags()} bolsas), Test ({test_data.get_num_bags()} bolsas)")
