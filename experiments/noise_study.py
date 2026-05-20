@@ -90,7 +90,16 @@ def main():
                 metric_func=metric_func
             )
 
-            dist_noisy = compute_distance_matrix(noisy_scaled.bags, metric_func, metric_name)
+            dist_noisy = global_persistent_cache.get(
+                dataset_name=f"{dataset_name}_noisy",
+                split="full",
+                scaler_name="MinMaxScaler",
+                metric_name=metric_name,
+                bags=noisy_scaled.bags,
+                metric_func=metric_func,
+                save=False,
+            )
+            
             best_eps = config["best_eps"]
             
             # --- EVALUACIÓN LIMPIA ---
