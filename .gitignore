@@ -97,7 +97,7 @@ optuna_plots/
 **/*.html
 
 # Data files
-#*.arff
-#**/*.arff
+*.arff
+**/*.arff
 *.npy
 **/*.npy

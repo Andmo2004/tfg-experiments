@@ -7,7 +7,8 @@ from scipy.stats import friedmanchisquare, wilcoxon, spearmanr, pearsonr
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import silhouette_score, davies_bouldin_score, accuracy_score, f1_score
-import scikit_posthocs as sp # pyrefly: ignore [missing-import]
+import scikit_posthocs as sp
+from miclustering.distances.matrix_cache import global_persistent_cache
 
 import logging
 import warnings
@@ -56,7 +57,6 @@ def generate_plots(csv_path, out_dir):
     df = pd.read_csv(csv_path)
     os.makedirs(out_dir, exist_ok=True)
     
-    # 1. GENERAR BOXPLOTS AL ESTILO DEL PAPER
     metrics = ["Silhouette", "Davies_Bouldin", "Accuracy", "F1_Score"]
     
     for metric in metrics:
@@ -78,7 +78,6 @@ def generate_plots(csv_path, out_dir):
         plt.close()
         print(f"Guardado boxplot para {metric} en {plot_path}")
 
-    # 2. GENERAR GRÁFICO DE LÍNEAS (DIFERENCIAS CRÍTICAS TIPO NEMENYI)
     for metric in metrics:
         if metric not in df.columns: continue
         
@@ -136,7 +135,16 @@ def main():
             model = MIDBSCAN(epsilon=0.368, min_pts=2, metric=metric_name)
             
             start_time = time.time()
-            dist_matrix = compute_distance_matrix(scaled_dataset.bags, metric_func, metric_name)
+            
+            dist_matrix = global_persistent_cache.get(
+                dataset_name=dataset_name,
+                split="full",
+                scaler_name="MinMaxScaler",
+                metric_name=metric_name,
+                bags=scaled_dataset.bags,
+                metric_func=metric_func,
+                save=True,   
+            )
             model._distance_matrix = dist_matrix
             model.fit(scaled_dataset)
             exec_time = time.time() - start_time

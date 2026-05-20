@@ -23,6 +23,7 @@ from miclustering.evaluation.bcm import MILEvaluator
 from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_avg
 from miclustering.distances.probability_distribution import mahalanobis_distance
 from miclustering.distances.distance_matrix import compute_distance_matrix
+from miclustering.distances.matrix_cache import global_persistent_cache
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -78,10 +79,23 @@ def main():
         
         for metric_name, metric_func in METRICS_TO_TEST.items():
             print(f"  - Evaluando {metric_name}...")
+
+            scaler_name = "MinMaxScaler"
+            dist_clean = global_persistent_cache.get(
+                dataset_name=dataset_name,
+                split="train",          
+                scaler_name=scaler_name,
+                metric_name=metric_name,
+                bags=clean_scaled.bags,
+                metric_func=metric_func
+            )
+
+            dist_noisy = compute_distance_matrix(noisy_scaled.bags, metric_func, metric_name)
+            best_eps = config["best_eps"]
             
             # --- EVALUACIÓN LIMPIA ---
-            model_clean = MIDBSCAN(epsilon=0.368, min_pts=2, metric=metric_name)
-            model_clean._distance_matrix = compute_distance_matrix(clean_scaled.bags, metric_func, metric_name)
+            model_clean = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
+            model_clean._distance_matrix = dist_clean
             model_clean.fit(clean_scaled)
             
             pred_clean = np.array([model_clean.labels.get(b.bag_id, -1) for b in clean_scaled.bags])
@@ -89,8 +103,8 @@ def main():
             f1_clean = f1_score(y_true, [map_clean.get(c, 0) for c in pred_clean], average='weighted')
             
             # --- EVALUACIÓN CON RUIDO ---
-            model_noisy = MIDBSCAN(epsilon=0.368, min_pts=2, metric=metric_name)
-            model_noisy._distance_matrix = compute_distance_matrix(noisy_scaled.bags, metric_func, metric_name)
+            model_noisy = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
+            model_noisy._distance_matrix = dist_noisy
             model_noisy.fit(noisy_scaled)
             
             pred_noisy = np.array([model_noisy.labels.get(b.bag_id, -1) for b in noisy_scaled.bags])
@@ -106,6 +120,8 @@ def main():
                 "F1_Noisy": f1_noisy,
                 "Drop_Percentage": drop_pct
             })
+
+            global_persistent_cache.clear_memory()
 
     df = pd.DataFrame(results)
     out_dir = os.path.join(RESULTS_DIR, "fase4_robustez")
