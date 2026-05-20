@@ -26,7 +26,6 @@ from miclustering.evaluation.scoring import detect_imbalance_ratio, score_labels
 
 logger = logging.getLogger(__name__)
 
-
 def grid_search_dbscan(
     dataset: MIData,
     distance_func: Callable[[Bag, Bag], float],
@@ -52,7 +51,6 @@ def grid_search_dbscan(
       5. Selecciona la combinación con mayor score:
         - F1 binario si dataset equilibrado
         - F1 macro   si dataset desbalanceado (ratio < 0.3)
-
 
     :param dataset:         MIData ya escalado (train).
     :param distance_func:   Función (Bag, Bag) → float.

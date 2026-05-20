@@ -14,7 +14,6 @@ project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-
 from config.settings import KNOWN_BESTS, DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 import optuna.visualization as vis
 from optimization.best_params import run_optuna_search

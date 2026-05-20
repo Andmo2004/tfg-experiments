@@ -26,7 +26,7 @@ import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 from miclustering.distances.matrix_cache import global_persistent_cache
-from miclustering.distances import DISTANCE_REGISTRY as DISTANCES_REGISTRY
+from miclustering.distances import DISTANCE_REGISTRY
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -129,7 +129,7 @@ def main():
         return
 
     ModelClass = model_classes[algorithm]
-    metric_func = DISTANCES_REGISTRY.get(str(distance_metric), hausdorff_distance)  # type: ignore
+    metric_func = DISTANCE_REGISTRY.get(str(distance_metric), hausdorff_distance)  # type: ignore
     
     # Optimización de Hiperparámetros (Optuna)
     dist_matrix = None

@@ -1,3 +1,4 @@
+from miclustering.distances import DISTANCE_REGISTRY
 """
 Phase 3: Evaluación de la Calidad del Clustering (CVIs Internos)
 Propósito: Evaluar si los clústeres detectados por MIDBSCAN son geométricamente sólidos,
@@ -24,17 +25,7 @@ from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
 from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
 from miclustering.evaluation.cvi import InternalCVIEvaluator, SEDIndex, DDIndex, HcIndex, VRCIndex, IIndex # pyrefly: ignore [missing-import]
 from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance # pyrefly: ignore [missing-import]
 
-DISTANCES = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_min": hausdorff_distance_min,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "cauchy_schwarz": cauchy_schwarz_distance,
-    "earth_movers": earth_movers_distance,
-    "mahalanobis": mahalanobis_distance
-}
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s - %(message)s")
@@ -79,7 +70,7 @@ def evaluate_model(
             scaler_name=scaler_name,
             metric_name=metric,
             bags=train_scaled.bags,
-            metric_func=DISTANCES[metric]
+            metric_func=DISTANCE_REGISTRY[metric]
         )
         model._distance_matrix = dist_matrix
         model.fit(train_scaled)

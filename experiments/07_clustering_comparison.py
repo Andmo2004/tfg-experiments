@@ -25,20 +25,11 @@ from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-imp
 from miclustering.models.mikmeans import MIKMeans # pyrefly: ignore [missing-import]
 from miclustering.models.mikmedoids import MIKMedoids # pyrefly: ignore [missing-import]
 from miclustering.evaluation.bcm import MILEvaluator # pyrefly: ignore [missing-import]
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, mahalanobis_distance, earth_movers_distance # pyrefly: ignore [missing-import]
 from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
 
 logging.basicConfig(level=logging.WARNING)
 
-DISTANCES_REGISTRY = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_min": hausdorff_distance_min,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "cauchy_schwarz": cauchy_schwarz_distance,
-    "earth_movers": earth_movers_distance,
-    "mahalanobis": mahalanobis_distance
-}
+from miclustering.distances import DISTANCE_REGISTRY
 
 def run_statistical_tests(df, metric_col):
     """
@@ -118,7 +109,7 @@ def main():
         k_real = len(np.unique(np.concatenate([y_true_train, y_true_test])))
         if k_real < 2: k_real = 2
             
-        metric_func = DISTANCES_REGISTRY.get(metric_name)
+        metric_func = DISTANCE_REGISTRY.get(metric_name)
         
         # Cargar matriz de distancias (Train) para eficiencia en MIDBSCAN y MIKMedoids
         dist_matrix_train = global_persistent_cache.get(
@@ -158,7 +149,13 @@ def main():
                 y_pred_train_raw = np.array([train_pred_dict.get(bag.bag_id, noise_label) for bag in train_scaled.bags])
                 
                 _, mapping = MILEvaluator.hungarian_map_clusters_to_labels(y_true_train, y_pred_train_raw)
-                y_pred_mapped = np.array([mapping.get(c, 0) for c in y_pred_raw_test])
+                y_pred_mapped = np.zeros_like(y_pred_raw_test)
+                for i, c in enumerate(y_pred_raw_test):
+                    if c in mapping:
+                        y_pred_mapped[i] = mapping[c]
+                    else:
+                        logging.warning(f"Clúster '{c}' encontrado en Test no estaba en el mapeo de Train. Usando fallback 0.")
+                        y_pred_mapped[i] = 0
                 
                 # Métricas
                 acc = accuracy_score(y_true_test, y_pred_mapped)
@@ -216,6 +213,7 @@ def main():
     
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "comparativa_boxplots.png"))
+    plt.show()
     plt.close()
     
     # Barplots (Media por Modelo con intervalo de confianza)
@@ -231,6 +229,7 @@ def main():
     
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "comparativa_barplots.png"))
+    plt.show()
     plt.close()
     
     # Gráfica de calor Dataset vs Modelo (F1)
@@ -240,6 +239,7 @@ def main():
     plt.title('Rendimiento (F1-Score) por Dataset y Modelo')
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "heatmap_f1_score.png"))
+    plt.show()
     plt.close()
 
     print(f"\n[+] Proceso completado. Gráficas y tablas guardadas en {out_dir}")

@@ -109,8 +109,6 @@ def plot_mil_clusters(model: MIDBSCAN, dataset: MIData,
     plt.show()
     plt.close()
 
-
-
 def plot_bags_distribution(
     dataset: MIData,
     method: Literal['pca', 'tsne'] = 'tsne',
@@ -205,8 +203,6 @@ def plot_bags_distribution(
 
     plt.close(fig)
     return os.path.abspath(output_path)
-
-
 
 if __name__ == '__main__':
     from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]

@@ -1,3 +1,4 @@
+from miclustering.distances import DISTANCE_REGISTRY
 """
 Fase 4 — Clasificación Final y Comparativa (Baseline con MIKnn)
 Propósito: Responder la pregunta central del TFG: ¿es MIDBSCAN competitivo frente a un clasificador supervisado de distancias en problemas MIL?
@@ -27,17 +28,6 @@ from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-imp
 from miclustering.models.miknn import MIKnn # pyrefly: ignore [missing-import]
 from miclustering.evaluation.bcm import MILEvaluator # pyrefly: ignore [missing-import]
 from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance # pyrefly: ignore [missing-import]
-
-DISTANCES = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_min": hausdorff_distance_min,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "cauchy_schwarz": cauchy_schwarz_distance,
-    "earth_movers": earth_movers_distance,
-    "mahalanobis": mahalanobis_distance
-}
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
@@ -57,6 +47,7 @@ def plot_confusion_matrix(y_true, y_pred, model_name, dataset_name, out_dir):
     plt.xlabel("Predicción")
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, f"cm_{model_name}_{dataset_name}.png"))
+    plt.show()
     plt.close()
 
 def evaluate_predictions(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
@@ -128,7 +119,7 @@ def main():
             scaler_name=scaler_name_str,
             metric_name=metric,
             bags=train_scaled.bags,
-            metric_func=DISTANCES[metric]
+            metric_func=DISTANCE_REGISTRY[metric]
         )
         dbscan._distance_matrix = dist_matrix
         dbscan.fit(train_scaled)

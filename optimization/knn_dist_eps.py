@@ -19,7 +19,6 @@ from miclustering.distances.distance_matrix import compute_distance_matrix # pyr
 
 logger = logging.getLogger(__name__)
 
-
 def _find_knee_point(distances: np.ndarray) -> Tuple[int, float]:
     """
     Encuentra el 'codo' de la curva usando la máxima distancia perpendicular
@@ -227,13 +226,11 @@ def optimize_eps(
     logger.info(f"Eps final seleccionado: {best_eps:.6f}")
     return best_eps
 
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
     from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]
-    from miclustering.distances.hausdorff import hausdorff_distance # pyrefly: ignore [missing-import]
-    
+        
     try:
         # 1. Cargar dataset
         logger.info("Cargando dataset musk1.arff...")

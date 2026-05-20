@@ -20,8 +20,6 @@ from miclustering.data.instance import Instance
 from miclustering.preprocessing.scaler import MinMaxScaler
 from miclustering.models.midbscan import MIDBSCAN
 from miclustering.evaluation.bcm import MILEvaluator
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import mahalanobis_distance
 from miclustering.distances.distance_matrix import compute_distance_matrix
 from miclustering.distances.matrix_cache import global_persistent_cache
 
@@ -147,6 +145,7 @@ def main():
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "barplot_robustez_caida.png"), dpi=300)
+    plt.show()
     plt.close()
     
     print(f"\n[+] Resultados de robustez guardados en {out_dir}")

@@ -20,8 +20,6 @@ from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
 from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]
 from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
-from miclustering.distances.hausdorff import hausdorff_distance # pyrefly: ignore [missing-import]
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance # pyrefly: ignore [missing-import]
 
 from visualization.heatmap import plot_distance_heatmap
 from visualization.boxplots import plot_instances_per_bag_boxplot

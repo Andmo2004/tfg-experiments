@@ -10,11 +10,9 @@ logger = logging.getLogger(__name__)
 # ─── Directorio de salida por defecto ────────────────────────────────────────
 _DEFAULT_OUTPUT_DIR = "results/heatmaps_output"
 
-
 def _ensure_output_dir(output_dir: str) -> None:
     """Crea el directorio de salida si no existe."""
     os.makedirs(output_dir, exist_ok=True)
-
 
 def plot_distance_heatmap(
     distance_matrix: np.ndarray,

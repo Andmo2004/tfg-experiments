@@ -1,3 +1,4 @@
+from miclustering.distances import DISTANCE_REGISTRY
 """
 00_distance_matrix_cache.py
 
@@ -18,23 +19,12 @@ from config.settings import DATASETS_DIR, RESULTS_DIR, DATASETS_CONFIG
 from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
 from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler # pyrefly: ignore [missing-import]
 from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg # pyrefly: ignore [missing-import]
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance # pyrefly: ignore [missing-import]
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 SCALERS = {
     "MinMaxScaler": MinMaxScaler,
     "StandardScaler": StandardScaler
-}
-
-DISTANCES = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_min": hausdorff_distance_min,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "cauchy_schwarz": cauchy_schwarz_distance,
-    "earth_movers": earth_movers_distance,
-    "mahalanobis": mahalanobis_distance
 }
 
 def precompute_matrices():
@@ -61,7 +51,7 @@ def precompute_matrices():
         dataset_full = ArffToMIData.from_arff(path)
         train_data, _ = dataset_full.split_data(percentage_train=70, seed=seed)
         
-        available_metrics = list(DISTANCES.keys())
+        available_metrics = list(DISTANCE_REGISTRY.keys())
         if dataset_name in ["Harddrive1", "Thioredoxin", "Newsgroups1"]:
             if "earth_movers" in available_metrics:
                 available_metrics.remove("earth_movers")
@@ -71,7 +61,7 @@ def precompute_matrices():
             scaled_train = scaler.fit_transform(train_data)
             
             for metric_name in available_metrics:
-                metric_func = DISTANCES[metric_name]
+                metric_func = DISTANCE_REGISTRY[metric_name]
                 
                 # Precompute for train split
                 global_persistent_cache.get(

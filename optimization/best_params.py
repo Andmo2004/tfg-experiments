@@ -1,3 +1,4 @@
+from miclustering.distances import DISTANCE_REGISTRY
 """
 optimization/best_params.py
 
@@ -35,8 +36,6 @@ from miclustering.distances.distance_matrix import compute_distance_matrix
 from miclustering.evaluation.scoring import detect_imbalance_ratio, score_labels
 
 # Métricas de distancia
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, earth_movers_distance, mahalanobis_distance
 
 # Cache
 from miclustering.distances.matrix_cache import global_persistent_cache
@@ -44,22 +43,12 @@ from miclustering.distances.matrix_cache import global_persistent_cache
 # Importamos configuraciones previas óptimas (Best Known Configurations)
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR, KNOWN_BESTS
 
-
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 SCALERS = {
     "MinMaxScaler": MinMaxScaler,
     "StandardScaler": StandardScaler
-}
-
-DISTANCES = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_min": hausdorff_distance_min,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "cauchy_schwarz": cauchy_schwarz_distance,
-    "earth_movers": earth_movers_distance,
-    "mahalanobis": mahalanobis_distance
 }
 
 def create_objective(dataset: MIData, dataset_name: str):
@@ -70,7 +59,7 @@ def create_objective(dataset: MIData, dataset_name: str):
     scaled_datasets_cache = {}
 
     # 1. Definir qué métricas están permitidas según el dataset
-    available_metrics = list(DISTANCES.keys())
+    available_metrics = list(DISTANCE_REGISTRY.keys())
     
     # 2. Excluimos EMD de los datasets computacionalmente intratables o muy densos
     # (Basado en el análisis de la media y el máximo de instancias por bolsa)
@@ -100,7 +89,7 @@ def create_objective(dataset: MIData, dataset_name: str):
             scaler_name=scaler_name, 
             metric_name=metric_name, 
             bags=scaled_dataset.bags,
-            metric_func=DISTANCES[metric_name]
+            metric_func=DISTANCE_REGISTRY[metric_name]
         )
 
         # 3. Calcular eps absoluto a partir del percentil
@@ -144,7 +133,6 @@ def create_objective(dataset: MIData, dataset_name: str):
             raise optuna.exceptions.TrialPruned()
 
     return objective
-
 
 def run_optuna_search(n_trials: int = 100):
     os.makedirs("results", exist_ok=True)
@@ -197,7 +185,7 @@ def run_optuna_search(n_trials: int = 100):
                 scaler_name=kb["scaler"], 
                 metric_name=kb["metric"], 
                 bags=scaled_dataset.bags,
-                metric_func=DISTANCES[kb["metric"]]
+                metric_func=DISTANCE_REGISTRY[kb["metric"]]
             )
             
             # 3. Calcular a qué percentil equivale exactamente tu eps_abs
@@ -287,7 +275,6 @@ def run_optuna_search(n_trials: int = 100):
         print("\n  [!] No se generaron resultados para guardar.\n")
 
     return results, studies
-
 
 if __name__ == '__main__':
     run_optuna_search(n_trials=100)

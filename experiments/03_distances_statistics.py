@@ -1,3 +1,4 @@
+from miclustering.distances import DISTANCE_REGISTRY
 import os
 import sys
 import time
@@ -26,19 +27,9 @@ from miclustering.data.midata import MIData
 from miclustering.preprocessing.scaler import MinMaxScaler
 from miclustering.models.midbscan import MIDBSCAN
 from miclustering.evaluation.bcm import MILEvaluator
-from miclustering.distances.hausdorff import hausdorff_distance, hausdorff_distance_min, hausdorff_distance_avg
-from miclustering.distances.probability_distribution import cauchy_schwarz_distance, mahalanobis_distance
 from miclustering.distances.distance_matrix import compute_distance_matrix
 
 logging.basicConfig(level=logging.WARNING)
-
-DISTANCES = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_min": hausdorff_distance_min,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "cauchy_schwarz": cauchy_schwarz_distance,
-    "mahalanobis": mahalanobis_distance
-}
 
 def get_bag_centroids(dataset):
     centroids = []
@@ -74,7 +65,8 @@ def generate_plots(csv_path, out_dir):
         plt.tight_layout()
         
         plot_path = os.path.join(out_dir, f"boxplot_{metric}.png")
-        plt.savefig(plot_path, dpi=300)
+    plt.savefig(plot_path, dpi=300)
+        plt.show()
         plt.close()
         print(f"Guardado boxplot para {metric} en {plot_path}")
 
@@ -104,7 +96,8 @@ def generate_plots(csv_path, out_dir):
             sns.heatmap(nemenyi_results < 0.05, annot=True, cmap="Blues", cbar=False)
             
         plot_path = os.path.join(out_dir, f"nemenyi_{metric}.png")
-        plt.savefig(plot_path, bbox_inches='tight', dpi=300)
+    plt.savefig(plot_path, bbox_inches='tight', dpi=300)
+        plt.show()
         plt.close()
         print(f"Guardado test Nemenyi para {metric} en {plot_path}")
 
@@ -129,7 +122,7 @@ def main():
         y_true = np.array([int(float(bag.label)) for bag in scaled_dataset.bags])
         X_centroids = get_bag_centroids(scaled_dataset)
         
-        for metric_name, metric_func in DISTANCES.items():
+        for metric_name, metric_func in DISTANCE_REGISTRY.items():
             print(f"  - Métrica evaluada: {metric_name}")
             
             model = MIDBSCAN(epsilon=0.368, min_pts=2, metric=metric_name)
@@ -216,6 +209,7 @@ def main():
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "tradeoff_time_vs_f1.png"), dpi=300)
+    plt.show()
     plt.close()
     
     print(f"[+] Gráfico Trade-off guardado en {out_dir}")
