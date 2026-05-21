@@ -1,7 +1,6 @@
 from miclustering.distances import DISTANCE_REGISTRY
 import os
 import sys
-from miclustering.data.arff_reader import ArffToMIData
 import time
 import numpy as np
 import pandas as pd
@@ -10,6 +9,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import silhouette_score, davies_bouldin_score, accuracy_score, f1_score
 import scikit_posthocs as sp
+
+from miclustering.data.arff_reader import ArffToMIData
 from miclustering.distances.matrix_cache import global_persistent_cache
 
 import logging
@@ -29,6 +30,7 @@ from miclustering.preprocessing.scaler import MinMaxScaler
 from miclustering.models.midbscan import MIDBSCAN
 from miclustering.evaluation.bcm import MILEvaluator
 from miclustering.distances.distance_matrix import compute_distance_matrix
+from miclustering.data.utils import parse_label
 
 logging.basicConfig(level=logging.WARNING)
 
