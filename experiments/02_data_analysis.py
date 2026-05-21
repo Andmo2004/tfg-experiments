@@ -6,7 +6,6 @@ de las distancias (heatmaps) y tamaños de las bolsas (boxplots).
 
 import os
 import sys
-from miclustering.data.arff_reader import ArffToMIData
 import csv
 import logging
 import numpy as np
@@ -17,10 +16,12 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
+from miclustering.data.arff_reader import ArffToMIData
+from miclustering.data.midata import MIData
+from miclustering.preprocessing.scaler import MinMaxScaler
+from miclustering.distances.matrix_cache import global_persistent_cache
 
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
-from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]
-from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.distances import DISTANCE_REGISTRY
 
 from visualization.heatmap import plot_distance_heatmap
 from visualization.boxplots import plot_instances_per_bag_boxplot

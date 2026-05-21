@@ -97,7 +97,7 @@ def generate_plots(csv_path, out_dir):
             sns.heatmap(nemenyi_results < 0.05, annot=True, cmap="Blues", cbar=False)
             
         plot_path = os.path.join(out_dir, f"nemenyi_{metric}.png")
-        plt.savefig(plot_path, bbox_inches=\'tight\', dpi=300)
+        plt.savefig(plot_path, bbox_inches='tight', dpi=300)
         plt.show()
         plt.close()
         print(f"Guardado test Nemenyi para {metric} en {plot_path}")

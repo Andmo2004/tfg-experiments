@@ -1,4 +1,3 @@
-from miclustering.distances import DISTANCE_REGISTRY
 """
 00_distance_matrix_cache.py
 
@@ -17,9 +16,10 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from config.settings import DATASETS_DIR, RESULTS_DIR, DATASETS_CONFIG
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
-from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler # pyrefly: ignore [missing-import]
-from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.data.midata import MIData
+from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler
+from miclustering.distances.matrix_cache import global_persistent_cache
+from miclustering.distances import DISTANCE_REGISTRY
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
