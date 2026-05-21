@@ -1,4 +1,3 @@
-from miclustering.distances import DISTANCE_REGISTRY
 """
 optimization/best_params.py
 
@@ -27,7 +26,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
+    
+from miclustering.distances import DISTANCE_REGISTRY
 from miclustering.data.midata import MIData
 from miclustering.models.midbscan import MIDBSCAN
 from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler
@@ -108,8 +108,7 @@ def create_objective(dataset: MIData, dataset_name: str):
         try:
             model = MIDBSCAN(epsilon=eps_absolute, min_pts=min_pts, metric=metric_name)
             # Inyección directa de la matriz para no recalcular
-            model._distance_matrix = dist_matrix 
-            model.fit(scaled_dataset)
+            model.fit(scaled_dataset, precomputed_matrix=dist_matrix)
             
             # Extraer estadísticas para el registro
             stats = model.get_statistics()

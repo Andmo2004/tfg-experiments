@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
+from miclustering.data.midata import MIData 
 
 logger = logging.getLogger(__name__)
 

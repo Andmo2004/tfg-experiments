@@ -72,7 +72,7 @@ def main():
         # 1. Normalizar el dataset limpio
         scaler = MinMaxScaler()
         clean_scaled = scaler.fit_transform(dataset)
-        y_true = np.array([int(float(bag.label)) for bag in clean_scaled.bags])
+        y_true = np.array([parse_label(bag.label) for bag in clean_scaled.bags])
         
         # 2. Generar el dataset ruidoso (10% de bolsas afectadas)
         noisy_scaled = inject_noise_into_dataset(clean_scaled, noise_ratio=0.10, noise_magnitude=10.0)
@@ -104,8 +104,7 @@ def main():
             
             # --- EVALUACIÓN LIMPIA ---
             model_clean = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
-            model_clean._distance_matrix = dist_clean
-            model_clean.fit(clean_scaled)
+            model_clean.fit(clean_scaled, precomputed_matrix=dist_clean)
             
             pred_clean = np.array([model_clean.labels.get(b.bag_id, -1) for b in clean_scaled.bags])
             _, map_clean = MILEvaluator.hungarian_map_clusters_to_labels(y_true, pred_clean)
@@ -113,8 +112,7 @@ def main():
             
             # --- EVALUACIÓN CON RUIDO ---
             model_noisy = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
-            model_noisy._distance_matrix = dist_noisy
-            model_noisy.fit(noisy_scaled)
+            model_noisy.fit(noisy_scaled, precomputed_matrix=dist_noisy)
             
             pred_noisy = np.array([model_noisy.labels.get(b.bag_id, -1) for b in noisy_scaled.bags])
             _, map_noisy = MILEvaluator.hungarian_map_clusters_to_labels(y_true, pred_noisy)

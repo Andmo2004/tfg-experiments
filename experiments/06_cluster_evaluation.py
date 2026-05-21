@@ -1,4 +1,3 @@
-from miclustering.distances import DISTANCE_REGISTRY
 """
 Phase 3: Evaluación de la Calidad del Clustering (CVIs Internos)
 Propósito: Evaluar si los clústeres detectados por MIDBSCAN son geométricamente sólidos,
@@ -19,13 +18,14 @@ project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from miclustering.distances import DISTANCE_REGISTRY
 import numpy as np
 from scipy.stats import spearmanr
 
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
-from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
-from miclustering.evaluation.cvi import InternalCVIEvaluator, SEDIndex, DDIndex, HcIndex, VRCIndex, IIndex # pyrefly: ignore [missing-import]
-from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.data.midata import MIData 
+from miclustering.models.midbscan import MIDBSCAN 
+from miclustering.evaluation.cvi import InternalCVIEvaluator, SEDIndex, DDIndex, HcIndex, VRCIndex, IIndex 
+from miclustering.distances.matrix_cache import global_persistent_cache 
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
@@ -73,8 +73,7 @@ def evaluate_model(
             bags=train_scaled.bags,
             metric_func=DISTANCE_REGISTRY[metric]
         )
-        model._distance_matrix = dist_matrix
-        model.fit(train_scaled)
+        model.fit(train_scaled, precomputed_matrix=dist_matrix)
         stats = model.get_statistics()
         num_clusters = stats["num_clusters"]
         noise_pct = stats["noise_percentage"]

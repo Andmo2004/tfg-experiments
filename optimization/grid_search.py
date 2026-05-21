@@ -18,11 +18,11 @@ project_root = os.path.dirname(current_dir)
 sys.path.insert(0, project_root)
 sys.path.insert(0, os.path.join(project_root, 'src'))
 
-from miclustering.data.bag import Bag # pyrefly: ignore [missing-import]
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
-from miclustering.distances.distance_matrix import compute_distance_matrix # pyrefly: ignore [missing-import]
-from optimization.knn_dist_eps import optimize_eps, _adaptive_eps_cap_percentile # pyrefly: ignore [missing-import]
-from miclustering.evaluation.scoring import detect_imbalance_ratio, score_labels # pyrefly: ignore [missing-import]
+from miclustering.data.bag import Bag
+from miclustering.data.midata import MIData
+from miclustering.distances.distance_matrix import compute_distance_matrix
+from optimization.knn_dist_eps import optimize_eps, _adaptive_eps_cap_percentile
+from miclustering.evaluation.scoring import detect_imbalance_ratio, score_labels
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ def grid_search_dbscan(
     :param save_plots:      Pasar a optimize_eps.
     :returns:               Tupla (best_eps, best_min_pts).
     """
-    from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
+    from miclustering.models.midbscan import MIDBSCAN
 
     n_bags = dataset.get_num_bags()
 
@@ -123,11 +123,8 @@ def grid_search_dbscan(
             try:
                 model = MIDBSCAN(epsilon=eps, min_pts=min_pts, metric=metric_name)
 
-                # inyección directa
-                model._distance_matrix = dist_matrix
-
                 # Entrenamos el modelo normalmente
-                model.fit(dataset)
+                model.fit(dataset, precomputed_matrix=dist_matrix)
 
                 score = score_labels(dataset, model.labels, imbalance_ratio=imbalance_ratio)
 

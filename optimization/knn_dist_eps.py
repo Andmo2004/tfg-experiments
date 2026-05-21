@@ -14,9 +14,9 @@ sys.path.insert(0, project_root)
 sys.path.insert(0, os.path.join(project_root, 'src'))
 #########
 
-from miclustering.data.bag import Bag # pyrefly: ignore [missing-import]
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
-from miclustering.distances.distance_matrix import compute_distance_matrix # pyrefly: ignore [missing-import]
+from miclustering.data.bag import Bag 
+from miclustering.data.midata import MIData 
+from miclustering.distances.distance_matrix import compute_distance_matrix 
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +230,7 @@ def optimize_eps(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
-    from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]
+    from miclustering.preprocessing.scaler import MinMaxScaler 
         
     try:
         # 1. Cargar dataset

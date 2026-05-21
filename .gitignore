@@ -101,3 +101,4 @@ cython_debug/
 # Optuna plots & artifacts
 optuna_plots/
 **/*.html
+TODO.md

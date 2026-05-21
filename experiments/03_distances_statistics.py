@@ -120,7 +120,7 @@ def main():
         scaler = MinMaxScaler()
         scaled_dataset = scaler.fit_transform(dataset)
         
-        y_true = np.array([int(float(bag.label)) for bag in scaled_dataset.bags])
+        y_true = np.array([parse_label(bag.label) for bag in scaled_dataset.bags])
         X_centroids = get_bag_centroids(scaled_dataset)
         
         for metric_name, metric_func in DISTANCE_REGISTRY.items():
@@ -139,8 +139,7 @@ def main():
                 metric_func=metric_func,
                 save=True,   
             )
-            model._distance_matrix = dist_matrix
-            model.fit(scaled_dataset)
+            model.fit(scaled_dataset, precomputed_matrix=dist_matrix)
             exec_time = time.time() - start_time
 
             pred_dict = getattr(model, "labels", {})

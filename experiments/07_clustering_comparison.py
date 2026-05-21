@@ -21,12 +21,12 @@ if project_root not in sys.path:
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
-from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
-from miclustering.models.mikmeans import MIKMeans # pyrefly: ignore [missing-import]
-from miclustering.models.mikmedoids import MIKMedoids # pyrefly: ignore [missing-import]
-from miclustering.evaluation.bcm import MILEvaluator # pyrefly: ignore [missing-import]
-from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.data.midata import MIData
+from miclustering.models.midbscan import MIDBSCAN
+from miclustering.models.mikmeans import MIKMeans
+from miclustering.models.mikmedoids import MIKMedoids
+from miclustering.evaluation.bcm import MILEvaluator
+from miclustering.distances.matrix_cache import global_persistent_cache
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -105,8 +105,8 @@ def main():
             train_scaled = scaler.fit_transform(train_data)
             test_scaled = scaler.transform(test_data)
             
-            y_true_train = np.array([int(float(bag.label)) for bag in train_scaled.bags])
-            y_true_test = np.array([int(float(bag.label)) for bag in test_scaled.bags])
+            y_true_train = np.array([parse_label(bag.label) for bag in train_scaled.bags])
+            y_true_test = np.array([parse_label(bag.label) for bag in test_scaled.bags])
             
             # k_real = cantidad de clases únicas
             k_real = len(np.unique(np.concatenate([y_true_train, y_true_test])))
@@ -130,14 +130,13 @@ def main():
                 "MI-KMedoids": MIKMedoids(k=k_real, metric=metric_name, random_state=seed)
             }
             
-            # Inyectar matriz precalculada
-            models["MI-DBSCAN"]._distance_matrix = dist_matrix_train
-            models["MI-KMedoids"]._distance_matrix = dist_matrix_train
-            
             for model_name, model in models.items():
                 try:
-                    # Entrenamiento
-                    model.fit(train_scaled)
+                    # Entrenamiento con matriz precalculada
+                    if model_name in ["MI-DBSCAN", "MI-KMedoids"]:
+                        model.fit(train_scaled, precomputed_matrix=dist_matrix_train)
+                    else:
+                        model.fit(train_scaled)
                     
                     # Predicción en test
                     test_pred_dict = model.predict(test_scaled)

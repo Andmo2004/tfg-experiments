@@ -24,11 +24,11 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import] 
-from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
-from miclustering.models.miknn import MIKnn # pyrefly: ignore [missing-import]
-from miclustering.evaluation.bcm import MILEvaluator # pyrefly: ignore [missing-import]
-from miclustering.distances.matrix_cache import global_persistent_cache # pyrefly: ignore [missing-import]
+from miclustering.data.midata import MIData 
+from miclustering.models.midbscan import MIDBSCAN
+from miclustering.models.miknn import MIKnn
+from miclustering.evaluation.bcm import MILEvaluator
+from miclustering.distances.matrix_cache import global_persistent_cache
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
@@ -108,8 +108,8 @@ def main():
             train_scaled = scaler.fit_transform(train_data)
             test_scaled = scaler.transform(test_data)
             
-            y_true_train = np.array([int(float(bag.label)) for bag in train_scaled.bags])
-            y_true_test = np.array([int(float(bag.label)) for bag in test_scaled.bags])
+            y_true_train = np.array([parse_label(bag.label) for bag in train_scaled.bags])
+            y_true_test = np.array([parse_label(bag.label) for bag in test_scaled.bags])
             
             # ---------------------------------------------------------
             # MIDBSCAN
@@ -124,8 +124,7 @@ def main():
                 bags=train_scaled.bags,
                 metric_func=DISTANCE_REGISTRY[metric]
             )
-            dbscan._distance_matrix = dist_matrix
-            dbscan.fit(train_scaled)
+            dbscan.fit(train_scaled, precomputed_matrix=dist_matrix)
             
             # Predicción en test (cluster labels crudas, incluyendo -1)
             dbscan_pred_dict = dbscan.predict(test_scaled)
@@ -154,7 +153,7 @@ def main():
             # ---------------------------------------------------------
             # Búsqueda del mejor k sobre una partición de validación extraída de train
             train_sub, val_sub = train_scaled.split_data(percentage_train=80, seed=seed)
-            y_true_val = np.array([int(float(bag.label)) for bag in val_sub.bags])
+            y_true_val = np.array([parse_label(bag.label) for bag in val_sub.bags])
             
             best_k = 1
             best_f1_knn = -1

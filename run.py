@@ -10,17 +10,16 @@ from sklearn import metrics
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
-src_dir = os.path.join(current_dir, "src")
-if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
 
 from miclustering.data.midata import MIData
+from miclustering.data.utils import parse_label
 from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler
 from miclustering.models.midbscan import MIDBSCAN
 from miclustering.models.miknn import MIKnn
 from miclustering.models.mikmeans import MIKMeans
 from miclustering.models.mikmedoids import MIKMedoids
 from miclustering.evaluation.bcm import MILEvaluator
+from miclustering.data.arff_reader import ArffToMIData
 
 import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -113,8 +112,8 @@ def main():
         train_scaled = train_data
         test_scaled = test_data
 
-    y_true_train = np.array([int(float(bag.label)) for bag in train_scaled.bags])
-    y_true_test = np.array([int(float(bag.label)) for bag in test_scaled.bags])
+    y_true_train = np.array([parse_label(bag.label) for bag in train_scaled.bags])
+    y_true_test = np.array([parse_label(bag.label) for bag in test_scaled.bags])
 
     # Instanciar el modelo
     model_classes = {
@@ -160,8 +159,6 @@ def main():
                 eps_absolute = float(np.percentile(upper_positive, eps_percentile))
                 
                 model = MIDBSCAN(epsilon=eps_absolute, min_pts=min_pts, metric=str(distance_metric))
-                model._distance_matrix = dist_matrix
-                
             elif algorithm == "miknn":
                 k = trial.suggest_int("k", 1, 15)
                 model = MIKnn(k=k, metric=str(distance_metric))
@@ -173,8 +170,6 @@ def main():
             elif algorithm == "mikmedoids":
                 k = trial.suggest_int("k", 2, 15)
                 model = MIKMedoids(k=k, metric=str(distance_metric), random_state=seed)
-                model._distance_matrix = dist_matrix  # type: ignore
-                
             if model is None:
                 raise ValueError("Modelo no inicializado.")
 
@@ -185,10 +180,13 @@ def main():
                     model.fit(train_sub)
                     preds = model.predict(val_sub)
                     y_pred_val = np.array([preds.get(bag.bag_id, 0) for bag in val_sub.bags])
-                    y_true_val = np.array([int(float(bag.label)) for bag in val_sub.bags])
+                    y_true_val = np.array([parse_label(bag.label) for bag in val_sub.bags])
                     return float(metrics.f1_score(y_true_val, y_pred_val, zero_division=0, average='weighted'))
                 else:
-                    model.fit(train_scaled)
+                    if algorithm in ["midbscan", "mikmedoids"] and dist_matrix is not None:
+                        model.fit(train_scaled, precomputed_matrix=dist_matrix)
+                    else:
+                        model.fit(train_scaled)
                     if algorithm == "midbscan" and getattr(model, "cluster_count", -1) == 0:
                         return 0.0
                         
@@ -244,8 +242,6 @@ def main():
     logger.info(f"Instanciando modelo con hiperparámetros finales: {init_kwargs}")
     try:
         model = ModelClass(**init_kwargs)
-        if algorithm in ["midbscan", "mikmedoids"] and dist_matrix is not None:
-            model._distance_matrix = dist_matrix  # type: ignore
     except Exception as e:
         logger.error(f"Error al instanciar el modelo: {e}")
         return
@@ -253,7 +249,10 @@ def main():
     # Entrenar y Predecir
     logger.info("Entrenando modelo...")
     try:
-        model.fit(train_scaled)
+        if algorithm in ["midbscan", "mikmedoids"] and dist_matrix is not None:
+            model.fit(train_scaled, precomputed_matrix=dist_matrix)
+        else:
+            model.fit(train_scaled)
     except Exception as e:
         logger.error(f"Error en el entrenamiento (fit): {e}")
         return

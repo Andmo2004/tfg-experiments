@@ -14,8 +14,8 @@ from sklearn.manifold import TSNE
 import seaborn as sns
 from typing import Literal, Dict, Any, Optional
 
-from miclustering.models.midbscan import MIDBSCAN # pyrefly: ignore [missing-import]
-from miclustering.data.midata import MIData # pyrefly: ignore [missing-import]
+from miclustering.models.midbscan import MIDBSCAN 
+from miclustering.data.midata import MIData 
 
 _DEFAULT_DISTRIB_DIR = "results/bags_distrib_plots"
 
@@ -144,7 +144,7 @@ def plot_bags_distribution(
         if len(mat) == 0:
             continue
         bag_vectors.append(np.mean(mat, axis=0))
-        labels.append(int(float(bag.label)))
+        labels.append(parse_label(bag.label))
 
     if not bag_vectors:
         raise ValueError("No se encontraron bolsas con instancias en el dataset.")
@@ -205,7 +205,7 @@ def plot_bags_distribution(
     return os.path.abspath(output_path)
 
 if __name__ == '__main__':
-    from miclustering.preprocessing.scaler import MinMaxScaler # pyrefly: ignore [missing-import]
+    from miclustering.preprocessing.scaler import MinMaxScaler 
 
     files = [
         "datasets/Thioredoxin.arff",

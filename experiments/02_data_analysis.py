@@ -131,7 +131,7 @@ def run_phase_1():
             scaler_name="MinMaxScaler",
             metric_name="hausdorff",
             bags=train_scaled.bags,
-            metric_func=hausdorff_distance
+            metric_func=DISTANCE_REGISTRY[metric]
         )
         dist_hau = cached_hau[np.ix_(sorted_indices, sorted_indices)]
         _, _, sep_hau, _ = analyze_distances(dist_hau, sorted_bags)
@@ -154,7 +154,7 @@ def run_phase_1():
             scaler_name="MinMaxScaler",
             metric_name="cauchy_schwarz",
             bags=train_scaled.bags,
-            metric_func=cauchy_schwarz_distance
+            metric_func=DISTANCE_REGISTRY[metric]
         )
         dist_cs = cached_cs[np.ix_(sorted_indices, sorted_indices)]
         _, _, sep_cs, _ = analyze_distances(dist_cs, sorted_bags)
