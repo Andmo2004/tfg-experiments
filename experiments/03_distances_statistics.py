@@ -105,7 +105,10 @@ def generate_plots(csv_path, out_dir):
         print(f"Guardado test Nemenyi para {metric} en {plot_path}")
 
 def main():
-    print("Iniciando Fase 3: Estudio del Impacto de la Distancia (DBSCAN-MIL)...")
+    print(f"\n{'='*70}")
+    print("  Fase 1: Estudio del Impacto de las métricas:")
+    print(f"{'='*70}")
+    print("1.1 - Impacto de las Distancias en el Modelo")
     results = []
     
     for config in DATASETS_CONFIG:
@@ -125,7 +128,13 @@ def main():
         y_true = np.array([parse_label(bag.label) for bag in scaled_dataset.bags])
         X_centroids = get_bag_centroids(scaled_dataset)
         
-        for metric_name, metric_func in DISTANCE_REGISTRY.items():
+        available_metrics = list(DISTANCE_REGISTRY.keys())
+        if dataset_name in ["Harddrive1", "Thioredoxin", "Newsgroups1", "musk2"]:
+            if "earth_movers" in available_metrics:
+                available_metrics.remove("earth_movers")       
+
+        for metric_name in available_metrics:
+            metric_func = DISTANCE_REGISTRY[metric_name]
             print(f"  - Métrica evaluada: {metric_name}")
             
             model = MIDBSCAN(epsilon=0.368, min_pts=2, metric=metric_name)

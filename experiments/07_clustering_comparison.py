@@ -1,15 +1,17 @@
 import os
 import sys
-from miclustering.data.arff_reader import ArffToMIData
+import warnings
+import logging
+
 import numpy as np
 import pandas as pd
-from scipy.stats import friedmanchisquare, wilcoxon
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import accuracy_score, f1_score
+
 from datetime import datetime
-import logging
-import warnings
+
+from scipy.stats import friedmanchisquare, wilcoxon
+from sklearn.metrics import accuracy_score, f1_score
 
 # Suprimir advertencias menores para salida limpia en consola
 warnings.filterwarnings('ignore')
@@ -21,25 +23,25 @@ if project_root not in sys.path:
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
-from miclustering.data.midata import MIData
+from miclustering.distances import DISTANCE_REGISTRY
+from miclustering.data.arff_reader import ArffToMIData
 from miclustering.models.midbscan import MIDBSCAN
 from miclustering.models.mikmeans import MIKMeans
 from miclustering.models.mikmedoids import MIKMedoids
 from miclustering.evaluation.bcm import MILEvaluator
 from miclustering.distances.matrix_cache import global_persistent_cache
+from miclustering.data.utils import parse_label
 
 logging.basicConfig(level=logging.WARNING)
-
-from miclustering.distances import DISTANCE_REGISTRY
 
 def run_statistical_tests(df, metric_col):
     """
     Realiza Test de Friedman para ver si hay diferencias significativas globales entre modelos
     y luego Test de Wilcoxon post-hoc para comparar el mejor contra el resto.
     """
-    print(f"\n{'='*50}")
+    print(f"\n{'_'*30}")
     print(f" Análisis Estadístico para {metric_col}")
-    print(f"{'='*50}")
+    print(f"{'_'*30}")
     
     # Pivotar: Filas=Datasets, Columnas=Modelos, Valores=Métrica
     pivot = df.pivot_table(index=['Dataset', 'Seed'], columns='Model', values=metric_col).dropna()
@@ -75,8 +77,11 @@ def run_statistical_tests(df, metric_col):
         print(">> No se encontraron diferencias significativas globales entre los modelos.")
 
 def main():
-    print("Iniciando Fase 4: Comparativa de Modelos (MIDBSCAN vs MIKMeans vs MIKMedoids)...")
-    
+    print(f"{'='*50}")
+    print("  Fase 4: Comparativa de Modelos:")
+    print(f"{'='*50}")
+    print("4.1 - Modelos no supervisados: MIKMEANS, MIKMEDOIDS, MIDBSCAN")
+
     results = []
     
     for config in DATASETS_CONFIG:
@@ -165,7 +170,7 @@ def main():
                     
                     results.append({
                         "Dataset": dataset_name,
-                    "Seed": seed,
+                        "Seed": seed,
                         "Model": model_name,
                         "Accuracy": acc,
                         "F1_Score": f1

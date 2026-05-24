@@ -81,7 +81,7 @@ def run_wilcoxon_test(data1, data2, metric_name, subgroup_name="Todos"):
 
 def main():
     print("="*80)
-    print("INICIANDO FASE 5: VALIDACIÓN ESTADÍSTICA (TEST DE WILCOXON)")
+    print("  Fase 5: Validación estadística (TEST DE WILCOXON)")
     print("="*80)
 
     csv_path = get_latest_full_eval_csv()

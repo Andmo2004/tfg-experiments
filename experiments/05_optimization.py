@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     print("="*70)
-    print("INICIANDO FASE 2: OPTIMIZACIÓN DE HIPERPARÁMETROS")
+    print("  Fase 2: Optimización de los hiperparámetros:")
     print("="*70)
     
     # Asegurar que la carpeta de resultados para las tramas de optuna existe

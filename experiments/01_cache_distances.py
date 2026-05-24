@@ -72,7 +72,8 @@ def precompute_matrices():
                     metric_name=metric_name,
                     bags=scaled_train.bags,
                     metric_func=metric_func,
-                    seed=seed
+                    seed=seed,
+                    save=True
                 )
                 
         # Liberar memoria de la caché local para el siguiente dataset (ya está guardado en disco)

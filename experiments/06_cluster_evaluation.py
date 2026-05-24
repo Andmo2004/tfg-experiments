@@ -110,9 +110,9 @@ def evaluate_model(
     }
 
 def main():
-    print("="*80)
-    print("INICIANDO FASE 3: EVALUACIÓN DE CALIDAD DE CLUSTERING (CVIs INTERNOS)")
-    print("="*80)
+    print("="*70)
+    print("  Fase 3: Evaluación de calidad del Clustering (CVIs INTERNOS):")
+    print("="*70)
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
     

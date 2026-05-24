@@ -78,7 +78,7 @@ def run_phase_1():
     summary_data = []
     
     print(f"\n{'='*70}")
-    print(f"  INICIANDO FASE 1: EDA Y CARACTERIZACIÓN DEL PROBLEMA")
+    print(f"  EDA Y CARACTERIZACIÓN DEL PROBLEMA")
     print(f"{'='*70}")
     
     scaler = MinMaxScaler()

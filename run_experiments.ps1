@@ -7,8 +7,7 @@ $ErrorActionPreference = "Stop"
 pip install -r requirements.txt
 
 # Ejecutar experimentos
-$phases = @("03", "04", "05")
-# $phases = @("00", "01", "02", "03", "04", "05")
+$phases = @("01", "02", "03", "04", "05", "06", "07", "08", "09", "10")
 
 foreach ($phase in $phases) {
     Get-ChildItem "experiments/${phase}_*.py" | ForEach-Object {

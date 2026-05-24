@@ -6,9 +6,9 @@ Propósito: Responder la pregunta central del TFG: ¿es MIDBSCAN competitivo fre
 
 import os
 import sys
-from miclustering.data.arff_reader import ArffToMIData
 import csv
 import logging
+
 from datetime import datetime
 from typing import Dict
 
@@ -19,15 +19,16 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-from miclustering.data.midata import MIData 
+from miclustering.data.arff_reader import ArffToMIData
 from miclustering.models.midbscan import MIDBSCAN
 from miclustering.models.miknn import MIKnn
 from miclustering.evaluation.bcm import MILEvaluator
+from miclustering.data.utils import parse_label 
 from miclustering.distances.matrix_cache import global_persistent_cache
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
@@ -72,9 +73,9 @@ def evaluate_predictions(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, fl
     }
 
 def main():
-    print("="*80)
-    print("INICIANDO FASE 4: CLASIFICACIÓN FINAL Y COMPARATIVA (BASELINE MIKnn)")
-    print("="*80)
+
+    print("4.2 - Comparativa con modelo supervisado: MIKNN")
+
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
     cm_dir = os.path.join(RESULTS_DIR, "confusion_matrices")
