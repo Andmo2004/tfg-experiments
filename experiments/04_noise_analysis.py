@@ -73,7 +73,14 @@ def main():
         # 2. Generar el dataset ruidoso (10% de bolsas afectadas)
         noisy_scaled = inject_noise_into_dataset(clean_scaled, noise_ratio=0.10, noise_magnitude=10.0)
         
-        for metric_name, metric_func in DISTANCE_REGISTRY.items():
+        # Usar subconjunto de distancias sin EMD (muy lento en estos datasets)
+        available_metrics = list(DISTANCE_REGISTRY.keys())
+        if dataset_name in ["Harddrive1", "Thioredoxin", "Newsgroups1"]:
+            if "earth_movers" in available_metrics:
+                available_metrics.remove("earth_movers")
+        
+        for metric_name in available_metrics:
+            metric_func = DISTANCE_REGISTRY[metric_name]
             print(f"  - Evaluando {metric_name}...")
 
             scaler_name = "MinMaxScaler"
