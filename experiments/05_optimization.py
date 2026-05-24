@@ -14,9 +14,11 @@ project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from config.settings import KNOWN_BESTS, DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 import optuna.visualization as vis
+from config.settings import KNOWN_BESTS, DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 from optimization.best_params import run_optuna_search
+
+from utils import cleanup_phase
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
@@ -71,7 +73,9 @@ def main():
             print(f"  [+] Visualizaciones generadas para {dataset_name}.")
         except Exception as e:
             print(f"  [!] No se pudieron generar visualizaciones para {dataset_name}: {e}")
-            
+
+    cleanup_phase(study)
+
     print("\n" + "="*70)
     print("FASE 2 COMPLETADA")
     print("Revisar CSV generado en 'results/' y visualizaciones en 'results/optuna_plots/'")

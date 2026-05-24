@@ -27,6 +27,7 @@ from miclustering.models.midbscan import MIDBSCAN
 from miclustering.evaluation.cvi import InternalCVIEvaluator, SEDIndex, DDIndex, HcIndex, VRCIndex, IIndex 
 from miclustering.distances.matrix_cache import global_persistent_cache 
 
+from utils import cleanup_phase
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s - %(message)s")
@@ -173,6 +174,8 @@ def main():
                         f1_values_opt.append(f1)
                         
         print("  [+] Evaluaciones completadas.")
+
+        cleanup_phase(train_scaled, train, dataset)
 
     # Guardar CSV
     ts = datetime.now().strftime("%d%m%Y%H%M")

@@ -103,3 +103,6 @@ optuna_plots/
 **/*.html
 TODO.md
 quick_test.py
+
+#vscode
+.DS_Store

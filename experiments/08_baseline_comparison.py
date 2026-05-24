@@ -32,7 +32,7 @@ from miclustering.data.utils import parse_label
 from miclustering.distances.matrix_cache import global_persistent_cache
 
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
-
+from utils import cleanup_phase
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -232,6 +232,9 @@ def main():
             writer.writerow({k: row.get(k) for k in fieldnames})
             
     print(f"\n[+] Resultados completos guardados en: {csv_path}")
+
+    cleanup_phase(all_results)
+
     print("\n" + "="*80)
     print("FASE 4 COMPLETADA")
     print("="*80)
