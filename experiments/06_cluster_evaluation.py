@@ -27,6 +27,7 @@ from miclustering.models.midbscan import MIDBSCAN
 from miclustering.evaluation.cvi import InternalCVIEvaluator, SEDIndex, DDIndex, HcIndex, VRCIndex, IIndex 
 from miclustering.distances.matrix_cache import global_persistent_cache 
 
+from utils import cleanup_phase
 from config.settings import DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s - %(message)s")
@@ -110,9 +111,9 @@ def evaluate_model(
     }
 
 def main():
-    print("="*80)
-    print("INICIANDO FASE 3: EVALUACIÓN DE CALIDAD DE CLUSTERING (CVIs INTERNOS)")
-    print("="*80)
+    print("="*70)
+    print("  Fase 3: Evaluación de calidad del Clustering (CVIs INTERNOS):")
+    print("="*70)
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
     
@@ -173,6 +174,8 @@ def main():
                         f1_values_opt.append(f1)
                         
         print("  [+] Evaluaciones completadas.")
+
+        cleanup_phase(train_scaled, train, dataset)
 
     # Guardar CSV
     ts = datetime.now().strftime("%d%m%Y%H%M")

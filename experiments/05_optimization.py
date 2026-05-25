@@ -14,9 +14,11 @@ project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from config.settings import KNOWN_BESTS, DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 import optuna.visualization as vis
+from config.settings import KNOWN_BESTS, DATASETS_CONFIG, DATASETS_DIR, RESULTS_DIR
 from optimization.best_params import run_optuna_search
+
+from utils import cleanup_phase
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     print("="*70)
-    print("INICIANDO FASE 2: OPTIMIZACIÓN DE HIPERPARÁMETROS")
+    print("  Fase 2: Optimización de los hiperparámetros:")
     print("="*70)
     
     # Asegurar que la carpeta de resultados para las tramas de optuna existe
@@ -71,7 +73,9 @@ def main():
             print(f"  [+] Visualizaciones generadas para {dataset_name}.")
         except Exception as e:
             print(f"  [!] No se pudieron generar visualizaciones para {dataset_name}: {e}")
-            
+
+    cleanup_phase(study)
+
     print("\n" + "="*70)
     print("FASE 2 COMPLETADA")
     print("Revisar CSV generado en 'results/' y visualizaciones en 'results/optuna_plots/'")

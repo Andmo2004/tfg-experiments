@@ -24,14 +24,10 @@ from miclustering.models.midbscan import MIDBSCAN
 from miclustering.evaluation.bcm import MILEvaluator
 from miclustering.distances.distance_matrix import compute_distance_matrix
 from miclustering.distances.matrix_cache import global_persistent_cache
+from miclustering.data.utils import parse_label
+from miclustering.distances import DISTANCE_REGISTRY
 
 logging.basicConfig(level=logging.WARNING)
-
-METRICS_TO_TEST = {
-    "hausdorff": hausdorff_distance,
-    "hausdorff_avg": hausdorff_distance_avg,
-    "mahalanobis": mahalanobis_distance
-}
 
 def inject_noise_into_dataset(dataset: MIData, noise_ratio: float = 0.10, noise_magnitude: float = 10.0) -> MIData:
     """
@@ -58,7 +54,7 @@ def inject_noise_into_dataset(dataset: MIData, noise_ratio: float = 0.10, noise_
     return MIData(noisy_bags, dataset.name + "_noisy")
 
 def main():
-    print("Iniciando Prueba de Robustez al Ruido...")
+    print("1.2 - Impacto del Ruido en las métricas")
     results = []
     
     for config in DATASETS_CONFIG:
@@ -77,7 +73,14 @@ def main():
         # 2. Generar el dataset ruidoso (10% de bolsas afectadas)
         noisy_scaled = inject_noise_into_dataset(clean_scaled, noise_ratio=0.10, noise_magnitude=10.0)
         
-        for metric_name, metric_func in METRICS_TO_TEST.items():
+        # Usar subconjunto de distancias sin EMD (muy lento en estos datasets)
+        available_metrics = list(DISTANCE_REGISTRY.keys())
+        if dataset_name in ["Harddrive1", "Thioredoxin", "Newsgroups1"]:
+            if "earth_movers" in available_metrics:
+                available_metrics.remove("earth_movers")
+        
+        for metric_name in available_metrics:
+            metric_func = DISTANCE_REGISTRY[metric_name]
             print(f"  - Evaluando {metric_name}...")
 
             scaler_name = "MinMaxScaler"
@@ -87,7 +90,8 @@ def main():
                 scaler_name=scaler_name,
                 metric_name=metric_name,
                 bags=clean_scaled.bags,
-                metric_func=metric_func
+                metric_func=metric_func,
+                save=True
             )
 
             dist_noisy = global_persistent_cache.get(
@@ -97,7 +101,7 @@ def main():
                 metric_name=metric_name,
                 bags=noisy_scaled.bags,
                 metric_func=metric_func,
-                save=False,
+                save=True,
             )
             
             best_eps = config["best_eps"]

@@ -18,6 +18,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from config.settings import RESULTS_DIR
+from utils import cleanup_phase
 
 SUBGROUP_A = ["musk1", "musk2", "mutagenesis3_atoms", "mutagenesis3_chains", "Harddrive1"]
 SUBGROUP_B = ["BirdsChestnut", "BirdsHammonds", "Thioredoxin", "Newsgroups1", "ImageElephant"]
@@ -81,7 +82,7 @@ def run_wilcoxon_test(data1, data2, metric_name, subgroup_name="Todos"):
 
 def main():
     print("="*80)
-    print("INICIANDO FASE 5: VALIDACIÓN ESTADÍSTICA (TEST DE WILCOXON)")
+    print("  Fase 5: Validación estadística (TEST DE WILCOXON)")
     print("="*80)
 
     csv_path = get_latest_full_eval_csv()
@@ -171,6 +172,8 @@ def main():
               f"(W = {f1_global['W']:.1f}, a = 0.05), {rechazo} la hipótesis nula de igualdad de rendimiento "
               f"entre MIDBSCAN y MIKnn. El tamaño del efecto es {f1_global['Interpretation']} (r = {f1_global['Effect size r']:.4f}). "
               f"Este resultado {sig} estadísticamente significativo.")
+
+    cleanup_phase(test_results)
 
     print("\n" + "="*80)
     print("FASE 5 COMPLETADA")
