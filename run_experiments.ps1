@@ -7,7 +7,8 @@ $ErrorActionPreference = "Stop"
 pip install -r requirements.txt
 
 # Ejecutar experimentos
-$phases = @("03", "04", "05")
+$phases = @("02")
+# $phases = @("03", "04", "05")
 # $phases = @("00", "01", "02", "03", "04", "05")
 
 foreach ($phase in $phases) {
