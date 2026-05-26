@@ -60,8 +60,9 @@ def main():
     for config in DATASETS_CONFIG:
         dataset_name = config["dataset_name"]
         path = os.path.join(DATASETS_DIR, f"{config['arff_name']}.arff")
-        if not os.path.exists(path): continue
-            
+        if not os.path.exists(path):
+            print(f"[!] No encontrado: {path}")
+            continue
         print(f"\n[+] Procesando: {dataset_name}")
         dataset = ArffToMIData.from_arff(path)
         
@@ -75,67 +76,78 @@ def main():
         
         # Usar subconjunto de distancias sin EMD (muy lento en estos datasets)
         available_metrics = list(DISTANCE_REGISTRY.keys())
-        if dataset_name in ["Harddrive1", "Thioredoxin", "Newsgroups1"]:
+        if dataset_name in ["Harddrive1", "Thioredoxin", "Newsgroups1", "musk2"]:
             if "earth_movers" in available_metrics:
                 available_metrics.remove("earth_movers")
         
         for metric_name in available_metrics:
-            metric_func = DISTANCE_REGISTRY[metric_name]
-            print(f"  - Evaluando {metric_name}...")
+            try:
+                metric_func = DISTANCE_REGISTRY[metric_name]
+                print(f"  - Evaluando {metric_name}...")
 
-            scaler_name = "MinMaxScaler"
-            dist_clean = global_persistent_cache.get(
-                dataset_name=dataset_name,
-                split="train",          
-                scaler_name=scaler_name,
-                metric_name=metric_name,
-                bags=clean_scaled.bags,
-                metric_func=metric_func,
-                save=True
-            )
+                scaler_name = "MinMaxScaler"
+                dist_clean = global_persistent_cache.get(
+                    dataset_name=dataset_name,
+                    split="train",          
+                    scaler_name=scaler_name,
+                    metric_name=metric_name,
+                    bags=clean_scaled.bags,
+                    metric_func=metric_func,
+                    save=True
+                )
 
-            dist_noisy = global_persistent_cache.get(
-                dataset_name=f"{dataset_name}_noisy",
-                split="full",
-                scaler_name="MinMaxScaler",
-                metric_name=metric_name,
-                bags=noisy_scaled.bags,
-                metric_func=metric_func,
-                save=True,
-            )
-            
-            best_eps = config["best_eps"]
-            
-            # --- EVALUACIÓN LIMPIA ---
-            model_clean = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
-            model_clean.fit(clean_scaled, precomputed_matrix=dist_clean)
-            
-            pred_clean = np.array([model_clean.labels.get(b.bag_id, -1) for b in clean_scaled.bags])
-            _, map_clean = MILEvaluator.hungarian_map_clusters_to_labels(y_true, pred_clean)
-            f1_clean = f1_score(y_true, [map_clean.get(c, 0) for c in pred_clean], average='weighted')
-            
-            # --- EVALUACIÓN CON RUIDO ---
-            model_noisy = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
-            model_noisy.fit(noisy_scaled, precomputed_matrix=dist_noisy)
-            
-            pred_noisy = np.array([model_noisy.labels.get(b.bag_id, -1) for b in noisy_scaled.bags])
-            _, map_noisy = MILEvaluator.hungarian_map_clusters_to_labels(y_true, pred_noisy)
-            f1_noisy = f1_score(y_true, [map_noisy.get(c, 0) for c in pred_noisy], average='weighted')
-            
-            drop_pct = ((f1_clean - f1_noisy) / f1_clean) * 100 if f1_clean > 0 else 0
-            
-            results.append({
-                "Dataset": dataset_name,
-                "Metric": metric_name,
-                "F1_Clean": f1_clean,
-                "F1_Noisy": f1_noisy,
-                "Drop_Percentage": drop_pct
-            })
+                dist_noisy = global_persistent_cache.get(
+                    dataset_name=f"{dataset_name}_noisy",
+                    split="full",
+                    scaler_name="MinMaxScaler",
+                    metric_name=metric_name,
+                    bags=noisy_scaled.bags,
+                    metric_func=metric_func,
+                    save=True,
+                )
+                
+                best_eps = config["best_eps"]
+                
+                # --- EVALUACIÓN LIMPIA ---
+                model_clean = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
+                model_clean.fit(clean_scaled, precomputed_matrix=dist_clean)
+                
+                pred_clean = np.array([model_clean.labels.get(b.bag_id, -1) for b in clean_scaled.bags])
+                _, map_clean = MILEvaluator.hungarian_map_clusters_to_labels(y_true, pred_clean)
+                f1_clean = f1_score(y_true, [map_clean.get(c, 0) for c in pred_clean], average='weighted')
+                
+                # --- EVALUACIÓN CON RUIDO ---
+                model_noisy = MIDBSCAN(epsilon=best_eps, min_pts=config["best_min_pts"], metric=metric_name)
+                model_noisy.fit(noisy_scaled, precomputed_matrix=dist_noisy)
+                
+                pred_noisy = np.array([model_noisy.labels.get(b.bag_id, -1) for b in noisy_scaled.bags])
+                _, map_noisy = MILEvaluator.hungarian_map_clusters_to_labels(y_true, pred_noisy)
+                f1_noisy = f1_score(y_true, [map_noisy.get(c, 0) for c in pred_noisy], average='weighted')
+                
+                drop_pct = ((f1_clean - f1_noisy) / f1_clean) * 100 if f1_clean > 0 else 0
+                
+                results.append({
+                    "Dataset": dataset_name,
+                    "Metric": metric_name,
+                    "F1_Clean": f1_clean,
+                    "F1_Noisy": f1_noisy,
+                    "Drop_Percentage": drop_pct
+                })
 
-            global_persistent_cache.clear_memory()
+                global_persistent_cache.clear_memory()        
+
+            except Exception as e:
+                print(f"  [ERROR] {metric_name} falló: {e}")
+                continue
+
 
     df = pd.DataFrame(results)
     out_dir = os.path.join(RESULTS_DIR, "fase4_robustez")
+
+    if df.empty:
+        print("[!] No se generaron resultados. Verifica que los datasets existen y los paths son correctos.")
+        return  
+
     os.makedirs(out_dir, exist_ok=True)
     df.to_csv(os.path.join(out_dir, "resultados_robustez.csv"), index=False)
     
