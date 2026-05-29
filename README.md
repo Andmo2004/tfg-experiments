@@ -48,36 +48,36 @@ El *notebook* complementario de Kaggle [`notebooks/Experiments_notebook.ipynb`](
 
 ```text
 tfg-experiments/
-├── config/
-│   └── settings.py              # Rutas a datasets, hiperparámetros óptimos, mapa de escaladores
-├── data/
-│   ├── datasets/                # Archivos .arff — no rastreados por git (ver Conjuntos de datos)
-│   └── README.md                # Procedencia de los datasets, versiones y licencias
-├── experiments/
-│   ├── 00_precompute_matrices.py
-│   ├── 01_eda.py
-│   ├── 02_hyperparameter_tuning.py
-│   ├── 03_clustering_quality.py
-│   ├── 04_comparison_vs_baseline.py
-│   └── 05_statistical_tests.py
-├── notebooks/
-│   └── Experiments_notebook.ipynb
-│   └── Experiments_notebook_2.ipynb
-├── optimization/
-│   ├── best_params.py           # Función objetivo de Optuna y ejecución del estudio
-│   ├── grid_search.py           # Wrapper de búsqueda en cuadrícula (grid search) para MIDBSCAN
-│   └── knn_dist_eps.py          # Gráfico de distancias k-NN y detección del codo (knee)
-├── results/                     # Salidas generadas — (*) no rastreadas por git
-│   ├── distance_matrices/       # Matrices de distancia .npy en caché
-├── visualization/
-│   ├── boxplots.py
-│   ├── heatmap.py
-│   └── plotter.py
-├── .gitignore
-├── README.md
-├── README_en.md
-├── requirements.txt
-└── run.py                       # Punto de entrada CLI para ejecuciones de experimentos individuales
+├ config/
+│   └ settings.py              # Rutas a datasets, hiperparámetros óptimos, mapa de escaladores
+├ data/
+│   ├ datasets/                # Archivos .arff — no rastreados por git (ver Conjuntos de datos)
+│   └ README.md                # Procedencia de los datasets, versiones y licencias
+├ experiments/
+│   ├ 00_precompute_matrices.py
+│   ├ 01_eda.py
+│   ├ 02_hyperparameter_tuning.py
+│   ├ 03_clustering_quality.py
+│   ├ 04_comparison_vs_baseline.py
+│   └ 05_statistical_tests.py
+├ notebooks/
+│   └ Experiments_notebook.ipynb
+│   └ Experiments_notebook_2.ipynb
+├ optimization/
+│   ├ best_params.py           # Función objetivo de Optuna y ejecución del estudio
+│   ├ grid_search.py           # Wrapper de búsqueda en cuadrícula (grid search) para MIDBSCAN
+│   └ knn_dist_eps.py          # Gráfico de distancias k-NN y detección del codo (knee)
+├ results/                     # Salidas generadas — (*) no rastreadas por git
+│   ├ distance_matrices/       # Matrices de distancia .npy en caché
+├ visualization/
+│   ├ boxplots.py
+│   ├ heatmap.py
+│   └ plotter.py
+├ .gitignore
+├ README.md
+├ README_en.md
+├ requirements.txt
+└ run.py                       # Punto de entrada CLI para ejecuciones de experimentos individuales
 ```
 > Las pruebas unitarias (unit tests) para las funciones de distancia y los algoritmos de clustering se encuentran en [`miclustering/tests/`](https://github.com/Andmo2004/MIClustering/tree/main/tests) y se mantienen junto a la librería principal.
 

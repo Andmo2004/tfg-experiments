@@ -10,7 +10,7 @@ import glob
 import csv
 from miclustering.preprocessing.scaler import MinMaxScaler, StandardScaler
 
-# ── Rutas Base ───────────────────────────────────────────────────────────────
+#  Rutas Base 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATASETS_DIR = os.path.join(BASE_DIR, "data", "datasets")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
@@ -18,7 +18,7 @@ RESULTS_DIR = os.path.join(BASE_DIR, "results")
 # Configurar la caché de la librería para reutilizar las matrices ya calculadas en TFG
 os.environ["MICLUSTERING_CACHE_DIR"] = os.path.join(RESULTS_DIR, "distance_matrices")
 
-# ── Configuraciones Óptimas por Dataset ──────────────────────────────────────
+# Configuraciones Óptimas por Dataset 
 # Mapeo para recuperar las clases reales de scaler a partir de sus nombres en string
 _SCALER_MAP = {
     "MinMaxScaler": MinMaxScaler,

@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.join(project_root, 'src'))
 from miclustering.data.bag import Bag 
 from miclustering.data.midata import MIData 
 from miclustering.distances.distance_matrix import compute_distance_matrix 
+from miclustering.distances.hausdorff import hausdorff_distance
 
 logger = logging.getLogger(__name__)
 
@@ -213,7 +214,7 @@ def optimize_eps(
         logger.warning(f"Eps óptimo ({best_eps:.4f}) > percentil 50 ({p50:.4f}). Usando percentil 20.")
         best_eps = float(np.percentile(upper, 20))
     '''
-    # ── Sanity check adaptativo ───────────────────────────────────────────────
+    #  Sanity check adaptativo 
     # Si el eps del codo supera el cap, lo recortamos.
     # Esto previene que datasets grandes (Birds, 383 bolsas) colapsen en 1 cluster.
     if best_eps > eps_cap:

@@ -65,21 +65,21 @@ def grid_search_dbscan(
 
     n_bags = dataset.get_num_bags()
 
-    # ── Detección de desbalanceo (una sola vez) ───────────────────────────────
+    #  Detección de desbalanceo (una sola vez) 
     imbalance_ratio = detect_imbalance_ratio(dataset)
     logger.info(
         f"Ratio de desbalanceo: {imbalance_ratio:.3f} → "
         f"{'DESBALANCEADO (F1 macro)' if imbalance_ratio < 0.3 else 'Equilibrado (F1 binario)'}"
     )
 
-    # ── Valores de min_pts a explorar ─────────────────────────────────────────
+    #  Valores de min_pts a explorar 
     if min_pts_values is None:
         ln_n = max(2, int(np.log(n_bags)))
         candidates = sorted(set([2, 3, ln_n, min(ln_n * 2, n_bags // 4)]))
         min_pts_values = [v for v in candidates if 2 <= v <= n_bags // 2]
     logger.info(f"Grid search: min_pts candidatos = {min_pts_values}")
 
-    # ── Matriz de distancias (se calcula UNA sola vez) ────────────────────────
+    #  Matriz de distancias (se calcula UNA sola vez) 
     logger.info("Calculando matriz de distancias para grid search...")
     bags = dataset.bags
     dist_matrix = compute_distance_matrix(bags, distance_func, metric_name)

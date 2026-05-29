@@ -48,36 +48,36 @@ The companion Kaggle notebook [`notebooks/Experiments_notebook.ipynb`](notebooks
 
 ```
 tfg-experiments/
-├── config/
-│   └── settings.py              # Dataset paths, optimal hyperparameters, scaler map
-├── data/
-│   ├── datasets/                # .arff files — not tracked by git (see Datasets)
-│   └── README.md                # Dataset provenance, versions, and licences
-├── experiments/
-│   ├── 00_precompute_matrices.py
-│   ├── 01_eda.py
-│   ├── 02_hyperparameter_tuning.py
-│   ├── 03_clustering_quality.py
-│   ├── 04_comparison_vs_baseline.py
-│   └── 05_statistical_tests.py
-├── notebooks/
-│   └── Experiments_notebook.ipynb
-│   └── Experiments_notebook_2.ipynb
-├── optimization/
-│   ├── best_params.py           # Optuna objective and study runner
-│   ├── grid_search.py           # Grid search wrapper for MIDBSCAN
-│   └── knn_dist_eps.py          # k-NN distance plot and knee detection
-├── results/                     # Generated outputs — (*) not tracked by git
-│   ├── distance_matrices/       # Cached .npy distance matrices
-├── visualization/
-│   ├── boxplots.py
-│   ├── heatmap.py
-│   └── plotter.py
-├── .gitignore
-├── README.md
-├── README_en.md
-├── requirements.txt
-└── run.py                       # CLI entry point for single-experiment runs
+├ config/
+│   └ settings.py              # Dataset paths, optimal hyperparameters, scaler map
+├ data/
+│   ├ datasets/                # .arff files — not tracked by git (see Datasets)
+│   └ README.md                # Dataset provenance, versions, and licences
+├ experiments/
+│   ├ 00_precompute_matrices.py
+│   ├ 01_eda.py
+│   ├ 02_hyperparameter_tuning.py
+│   ├ 03_clustering_quality.py
+│   ├ 04_comparison_vs_baseline.py
+│   └ 05_statistical_tests.py
+├ notebooks/
+│   └ Experiments_notebook.ipynb
+│   └ Experiments_notebook_2.ipynb
+├ optimization/
+│   ├ best_params.py           # Optuna objective and study runner
+│   ├ grid_search.py           # Grid search wrapper for MIDBSCAN
+│   └ knn_dist_eps.py          # k-NN distance plot and knee detection
+├ results/                     # Generated outputs — (*) not tracked by git
+│   ├ distance_matrices/       # Cached .npy distance matrices
+├ visualization/
+│   ├ boxplots.py
+│   ├ heatmap.py
+│   └ plotter.py
+├ .gitignore
+├ README.md
+├ README_en.md
+├ requirements.txt
+└ run.py                       # CLI entry point for single-experiment runs
 ```
 
 > Unit tests for the distance functions and clustering algorithms live in [`miclustering/tests/`](https://github.com/Andmo2004/MIClustering/tree/main/tests) and are maintained alongside the library.

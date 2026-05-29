@@ -7,7 +7,7 @@ from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
-# ─── Directorio de salida por defecto ────────────────────────────────────────
+#  Directorio de salida por defecto 
 _DEFAULT_OUTPUT_DIR = "results/heatmaps_output"
 
 def _ensure_output_dir(output_dir: str) -> None:
@@ -50,19 +50,19 @@ def plot_distance_heatmap(
 
     _ensure_output_dir(output_dir)
 
-    # ── Figura ────────────────────────────────────────────────────────────
+    #  Figura 
     # Escalamos el tamaño dinámicamente para que las etiquetas no se pisen
     fig_size = max(6, min(n * 0.55, 22))
     fig, ax = plt.subplots(figsize=(fig_size, fig_size))
 
-    # ── Imagen del heatmap ────────────────────────────────────────────────
+    #  Imagen del heatmap 
     im = ax.imshow(distance_matrix, cmap=cmap, aspect="auto", interpolation="nearest")
 
-    # ── Barra de color ────────────────────────────────────────────────────
+    #  Barra de color 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label("Distancia", fontsize=11)
 
-    # ── Línea de eps en la barra de color ─────────────────────────────────
+    #  Línea de eps en la barra de color 
     if eps is not None:
         d_min = distance_matrix.min()
         d_max = distance_matrix.max()
@@ -82,7 +82,7 @@ def plot_distance_heatmap(
                 transform=cbar.ax.transAxes,
             )
 
-    # ── Anotaciones numéricas (solo si N es manejable) ────────────────────
+    #  Anotaciones numéricas (solo si N es manejable) 
     if n <= 30:
         d_min, d_max = distance_matrix.min(), distance_matrix.max()
         threshold = (d_max - d_min) / 2 + d_min   # umbral para texto claro/oscuro
@@ -98,7 +98,7 @@ def plot_distance_heatmap(
                     color=color,
                 )
 
-    # ── Ejes ──────────────────────────────────────────────────────────────
+    #  Ejes 
     ax.set_xticks(range(n))
     ax.set_yticks(range(n))
 
@@ -106,7 +106,7 @@ def plot_distance_heatmap(
     ax.set_xticklabels(bag_ids, rotation=45, ha="right", fontsize=fontsize_ticks)
     ax.set_yticklabels(bag_ids, fontsize=fontsize_ticks)
 
-    # ── Highlight: celdas dentro del radio epsilon ─────────────────────────
+    #  Highlight: celdas dentro del radio epsilon 
     if eps is not None:
         for i in range(n):
             for j in range(n):
@@ -121,7 +121,7 @@ def plot_distance_heatmap(
                         )
                     )
 
-    # ── Títulos ───────────────────────────────────────────────────────────
+    #  Títulos 
     ax.set_title(title, fontsize=14, fontweight="bold", pad=14)
 
     subtitle_parts = []
@@ -133,7 +133,7 @@ def plot_distance_heatmap(
 
     ax.set_xlabel(" | ".join(subtitle_parts), fontsize=10, labelpad=10)
 
-    # ── Guardado ──────────────────────────────────────────────────────────
+    #  Guardado 
     if filename is None:
         safe_title = title.replace(" ", "_").replace("/", "-").replace("|", "-")
         filename = f"heatmap_{safe_title}"
